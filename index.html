@@ -282,7 +282,12 @@ let currentUser = null;
 async function loginUser() {
     const email = prompt("Introduce tu email para recibir un enlace de acceso:");
     if (!email) return;
-    const { error } = await _supabase.auth.signInWithOtp({ email });
+    const { error } = await _supabase.auth.signInWithOtp({ 
+        email,
+        options: {
+            emailRedirectTo: 'https://sebastianassia.github.io/nuestra_granjita/'
+        }
+    });
     if (error) showNotification("Error: " + error.message, true);
     else showNotification("📧 ¡Revisa tu correo para entrar!");
 }
@@ -1058,3 +1063,4 @@ setInterval(() => { if(!state.modal) render(); }, 1000);
     </script>
 </body>
 </html>
+
