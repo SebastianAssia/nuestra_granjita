@@ -451,7 +451,18 @@ async function loginUser() {
                 setTimeout(() => { if(area.contains(toast)) area.removeChild(toast); }, 300);
             }, 3000);
         }
-
+        function checkAchievements() {
+    state.achievements.forEach(ach => {
+        if (ach.completed) return;
+        if (ach.condition(state)) {
+            ach.completed = true;
+            state.money += ach.rewardMoney || 0;
+            state.medals += ach.rewardMedals || 0;
+            showNotification(`⭐ LOGRO: ${ach.name}`);
+            saveGame();
+        }
+    });
+}
         // --- SISTEMA DE MISIONES ---
         function generateNewQuests() {
             const now = Date.now();
@@ -596,10 +607,11 @@ async function loginUser() {
     plot.isWatered = false;
 
     showNotification(`✨ Cosechaste 1 ${crop.name}`);
+    checkAchievements();
     
-    console.log('💾 Guardando...'); // <-- AGREGA ESTO
+    console.log('💾 Guardando...'); //
     saveGame();
-    console.log('✅ Guardado completo'); // <-- AGREGA ESTO
+    console.log('✅ Guardado completo'); // 
     render();
 }
 
@@ -725,22 +737,36 @@ async function loginUser() {
 async function loadGame() {
     if (currentUser) {
         const { data } = await _supabase
-    .from('farm_saves')
-    .select('state_json')
-    .maybeSingle();
+            .from('farm_saves')
+            .select('state_json')
+            .maybeSingle();
         
         if (data) {
             state = data.state_json;
-            generateNewQuests(); // <-- AGREGA ESTO
+            
+            // Reconstruir logros con sus funciones
+            state.achievements = ACHIEVEMENTS.map(template => {
+                const saved = state.achievements.find(a => a.id === template.id);
+                return { ...template, completed: saved?.completed || false };
+            });
+            
+            generateNewQuests();
             render();
             return;
         }
     }
-
+    
     const localData = localStorage.getItem('farm-v1');
     if (localData) {
         state = JSON.parse(localData);
-        generateNewQuests(); // <-- Y ESTO
+        
+        // Reconstruir logros también para guardado local
+        state.achievements = ACHIEVEMENTS.map(template => {
+            const saved = state.achievements.find(a => a.id === template.id);
+            return { ...template, completed: saved?.completed || false };
+        });
+        
+        generateNewQuests();
         render();
     }
 }
@@ -1059,6 +1085,7 @@ window.fastForward = function(hours = 1) {
     </script>
 </body>
 </html>
+
 
 
 
