@@ -735,24 +735,17 @@ async function loginUser() {
             showNotification(`✨ ¡${item.name} conseguido!`);
             saveGame(); render();
         }
+
         // --- SISTEMA DE GUARDADO ---
-async function saveGame() {
-    console.log('💾 Guardando...', { currentUser, state });
-    localStorage.setItem('farm-v1', JSON.stringify(state));
-    
+        async function saveGame() {
+    localStorage.setItem('farm-v1', JSON.stringify(state)); // Respaldo local
+
     if (currentUser) {
-        console.log('☁️ Guardando en Supabase...');
-        const { data, error } = await _supabase.from('farm_saves').upsert({
+        await _supabase.from('farm_saves').upsert({
             id: currentUser.id,
             state_json: state,
             updated_at: new Date().toISOString()
         });
-        
-        if (error) {
-            console.error('❌ Error guardando:', error);
-        } else {
-            console.log('✅ Guardado exitoso:', data);
-        }
     }
 }
 
@@ -1052,7 +1045,7 @@ if (state.modal) {
         }
 
 // Escuchar cambios de sesión
-saveGame()
+_supabase.auth.onAuthStateChange((event, session) => {
     if (session) {
         currentUser = session.user;
         showNotification("👋 Sesión iniciada: " + currentUser.email);
@@ -1070,5 +1063,3 @@ setInterval(() => { if(!state.modal) render(); }, 1000);
     </script>
 </body>
 </html>
-
-
