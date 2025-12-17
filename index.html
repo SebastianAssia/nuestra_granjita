@@ -537,20 +537,6 @@ async function loginUser() {
             showNotification(`Recompensa reclamada: +$${quest.rewardMoney} / +${quest.rewardMedals}🏅`);
             saveGame(); render();
         }
-
-        function checkAchievements() {
-             state.achievements.forEach(ach => {
-                if (ach.completed) return;
-                if (ach.condition(state)) {
-                    ach.completed = true;
-                    state.money += ach.rewardMoney || 0;
-                    state.medals += ach.rewardMedals || 0;
-                    showNotification(`⭐ LOGRO: ${ach.name}`);
-                    saveGame();
-                }
-            });
-        }
-
         // --- ACCIONES DE JUEGO ---
         function plantCrop(plotId, cropKey) {
             const crop = CROPS[cropKey];
@@ -627,7 +613,9 @@ async function loginUser() {
             plot.isWatered = false;
 
             showNotification(`✨ Cosechaste 1 ${crop.name}`);
-            checkAchievements(); saveGame(); render();
+            checkAchievements(); 
+            saveGame(); 
+            render();
         }
 
         function buyAnimal(penId, animalKey) {
@@ -697,7 +685,7 @@ async function loginUser() {
             
             state.modal = null;
             showNotification('🔓 Desbloqueado con éxito');
-            checkAchievements(); saveGame(); render();
+            saveGame(); render();
         }
 
         function sellItem(itemKey) {
@@ -1086,4 +1074,5 @@ window.fastForward = function(hours = 1) {
     </script>
 </body>
 </html>
+
 
