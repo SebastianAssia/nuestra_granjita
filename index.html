@@ -1060,6 +1060,30 @@ generateNewQuests(); // <-- ESTO FALTABA
 loadGame();
 render();
 setInterval(() => { if(!state.modal) render(); }, 1000);
+    // 🎮 MODO DIOS (solo para pruebas)
+window.godMode = function() {
+    state.money = 999999;
+    state.medals = 999;
+    state.plots.forEach(p => p.unlocked = true);
+    state.pens.forEach(p => p.unlocked = true);
+    showNotification("⚡ MODO DIOS ACTIVADO");
+    saveGame();
+    render();
+};
+
+window.fastForward = function(hours = 1) {
+    const ms = hours * 60 * 60 * 1000;
+    state.plots.forEach(p => {
+        if (p.plantedAt) p.plantedAt -= ms;
+    });
+    state.pens.forEach(p => {
+        if (p.lastProduced) p.lastProduced -= ms;
+    });
+    showNotification(`⏩ Avanzado ${hours}h en el tiempo`);
+    saveGame();
+    render();
+};
     </script>
 </body>
 </html>
+
