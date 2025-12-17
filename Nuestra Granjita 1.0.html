@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌾 Granja Tycoon V1.0</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+    margin: 0;
+    overflow-y: auto;  /* Cambia de hidden a auto */
+    overflow-x: hidden; /* Solo horizontal bloqueado */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(180deg, #9ae6b4 0%, #68d391 100%);
+    min-height: 100vh;
+}
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: 
+        repeating-linear-gradient(
+            90deg,
+            transparent,
+            transparent 2px,
+            rgba(0,0,0,0.03) 2px,
+            rgba(0,0,0,0.03) 4px
+        ),
+        repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 2px,
+            rgba(0,0,0,0.03) 2px,
+            rgba(0,0,0,0.03) 4px
+        );
+    pointer-events: none;
+    z-index: -1;
+}
+        .grid-cell {
+            width: 80px;
+            height: 80px;
+            border: 2px solid #cbd5e0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            background: #fff;
+            border-radius: 8px;
+        }
+        
+        .grid-cell:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        /* ESTADOS DE LA PARCELA */
+        .grid-cell.locked {
+            background: #e2e8f0;
+            border-color: #a0aec0;
+            cursor: not-allowed;
+        }
+        
+        .grid-cell.empty {
+            background: #f7fafc;
+            border-style: dashed;
+            border-color: #cbd5e0;
+        }
+
+        .grid-cell.dry {
+            background: #fefcbf; /* Amarillo muy pálido / Arena */
+            border-color: #d69e2e;
+        }
+        
+        .grid-cell.growing {
+            background: #bee3f8; /* Azul claro */
+            border-color: #3182ce;
+        }
+        
+        .grid-cell.ready {
+            background: #f0fff4; /* Verde brillante */
+            border-color: #48bb78;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        .grid-cell.spoiled {
+            background: #feb2b2; /* Rojo claro */
+            border-color: #c53030;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(72, 187, 120, 0.7); }
+            50% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(72, 187, 120, 0); }
+        }
+        
+        .timer {
+            font-size: 0.65rem;
+            font-weight: bold;
+            color: #2d3748;
+            position: absolute;
+            bottom: 2px;
+            width: 100%;
+            text-align: center;
+            background: rgba(255,255,255,0.7);
+            border-radius: 0 0 6px 6px;
+        }
+
+        /* MODALES */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.7);  /* Este está bien, es el overlay oscuro */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    max-width: 400px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    position: relative;
+}
+
+.modal-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #e2e8f0;
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.modal-close:hover {
+    background: #cbd5e0;
+    transform: rotate(90deg);
+}
+        
+        .shop-item {
+    border: 2px solid #e2e8f0;
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;  /* Agrega esto */
+}
+
+.house-building {
+    background: linear-gradient(135deg, #fc8181 0%, #f56565 100%);
+    border: 3px solid #c53030;
+    border-radius: 12px;
+    padding: 20px;
+    width: 250px;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+}
+
+.house-building:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.3);
+}
+
+.house-building::before {
+    content: '🏠';
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 3rem;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+}
+
+.house-stats {
+    background: rgba(255,255,255,0.9);
+    border-radius: 8px;
+    padding: 10px;
+    margin-top: 40px;
+}
+
+.modal-title {
+    font-size: 1.3rem;
+    font-weight: bold;
+    margin-bottom: 15px;
+    color: #2d3748;
+    border-bottom: 2px solid #48bb78;
+    padding-bottom: 8px;
+}
+        
+        .shop-item:hover:not(.disabled) {
+            border-color: #48bb78;
+            background: #f0fff4;
+            transform: translateX(4px);
+        }
+        
+        .shop-item.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .area-label {
+            background: rgba(255,255,255,0.9);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 8px;
+            display: inline-block;
+        }
+
+        /* NOTIFICACIONES */
+        #notification-area {
+            position: fixed;
+            top: 70px;
+            right: 20px;
+            z-index: 1100;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: #38a169;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.3s;
+            transform: translateX(100%);
+            font-size: 0.9rem;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+    <div id="notification-area"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // --- CONSTANTES DEL JUEGO ---
+
+        // --- CONFIGURACIÓN SUPABASE ---
+const SUPABASE_URL = 'https://paiudfeydwyiscycotbz.supabase.co'; // Tu URL
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBhaXVkZmV5ZHd5aXNjeWNvdGJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU5Nzg0NTMsImV4cCI6MjA4MTU1NDQ1M30.SvrgjXzfzPEYtF7ef1SbkOSm1LY7Wg3pWbbj0Wh9qEA';
+const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentUser = null;
+
+// --- FUNCIONES DE ACCESO ---
+async function loginUser() {
+    const email = prompt("Introduce tu email para recibir un enlace de acceso:");
+    if (!email) return;
+    const { error } = await _supabase.auth.signInWithOtp({ email });
+    if (error) showNotification("Error: " + error.message, true);
+    else showNotification("📧 ¡Revisa tu correo para entrar!");
+}
+        const HOUR_IN_MS = 60 * 60 * 1000;
+        const DAY_IN_MS = 24 * HOUR_IN_MS;
+        const WEEK_IN_MS = 7 * DAY_IN_MS;
+
+        // SPOIL FACTOR: Tiempo extra antes de pudrirse (1.5 = 50% más del tiempo de crecimiento)
+        const SPOIL_FACTOR = 1.5; 
+
+        const CROPS = {
+            carrot: { name: 'Zanahoria', emoji: '🥕', cost: 20, time: 30 * 60 * 1000, sell: 50 },
+            wheat: { name: 'Trigo', emoji: '🌾', cost: 30, time: 60 * 60 * 1000, sell: 90 },
+            corn: { name: 'Maíz', emoji: '🌽', cost: 50, time: 2 * HOUR_IN_MS, sell: 150 },
+            tomato: { name: 'Tomate', emoji: '🍅', cost: 80, time: 3 * HOUR_IN_MS, sell: 250 },
+            potato: { name: 'Papa', emoji: '🥔', cost: 120, time: 5 * HOUR_IN_MS, sell: 400 },
+            pumpkin: { name: 'Calabaza', emoji: '🎃', cost: 200, time: 8 * HOUR_IN_MS, sell: 700 }
+        };
+
+        const ANIMALS = {
+            chicken: { name: 'Gallina', emoji: '🐔', cost: 800, produces: '🥚', productName: 'Huevo', time: 2 * HOUR_IN_MS, sell: 60, consumes: 'Trigo', consumptionAmount: 1 },
+            pig: { name: 'Cerdo', emoji: '🐷', cost: 1200, produces: '🥓', productName: 'Tocino', time: 4 * HOUR_IN_MS, sell: 120, consumes: 'Maíz', consumptionAmount: 2 },
+            cow: { name: 'Vaca', emoji: '🐄', cost: 2500, produces: '🥛', productName: 'Leche', time: 6 * HOUR_IN_MS, sell: 250, consumes: 'Trigo', consumptionAmount: 3 },
+            sheep: { name: 'Oveja', emoji: '🐑', cost: 3500, produces: '🧶', productName: 'Lana', time: 8 * HOUR_IN_MS, sell: 400, consumes: 'Zanahoria', consumptionAmount: 1 }
+        };
+
+        const PLOT_COSTS = [0, 300, 600, 1200, 2000, 3500, 5500, 8000];
+        const PEN_COSTS = [0, 1500, 2800, 4500, 7000];
+        
+        const ANIMAL_PRODUCT_EMOJIS = { '🥚': 'egg', '🥓': 'bacon', '🥛': 'milk', '🧶': 'wool' };
+
+        // --- MISIONES (Actualizadas con Riego) ---
+        const DAILY_QUEST_TEMPLATES = [
+            { type: 'harvest', target: 5, resource: 'carrot', text: 'Cosecha 5 Zanahorias 🥕.', rewardMoney: 100, rewardMedals: 1 },
+            { type: 'water', target: 5, resource: 'any', text: 'Riega 5 cultivos 💧.', rewardMoney: 50, rewardMedals: 1, counter: 'wateredToday' }, // NUEVO
+            { type: 'plant', target: 6, resource: 'any', text: 'Planta 6 cultivos.', rewardMoney: 80, rewardMedals: 1, counter: 'plantsToday' },
+            { type: 'sell', target: 10, resource: 'any', text: 'Vende 10 Productos.', rewardMoney: 150, rewardMedals: 1 },
+            { type: 'collect', target: 3, resource: 'egg', text: 'Recoge 3 Huevos 🥚.', rewardMoney: 120, rewardMedals: 1 },
+            { type: 'money', target: 600, resource: 'any', text: 'Gana $600.', rewardMoney: 0, rewardMedals: 2 },
+            { type: 'spend', target: 200, resource: 'any', text: 'Gasta $200.', rewardMoney: 50, rewardMedals: 1 },
+        ];
+
+        const WEEKLY_QUEST_TEMPLATES = [
+            { id: 101, type: 'money_total', target: 5000, text: 'Gana $5000 en la semana.', rewardMoney: 1500, rewardMedals: 15, counter: 'moneyEarnedTotalWeek' },
+            { id: 102, type: 'expansion', target: 1, resource: 'plot', text: 'Desbloquea 1 Parcela.', rewardMoney: 1000, rewardMedals: 10, counter: 'expansionsPlot' },
+            { id: 103, type: 'expansion', target: 1, resource: 'pen', text: 'Desbloquea 1 Corral.', rewardMoney: 1200, rewardMedals: 12, counter: 'expansionsPen' },
+            { id: 104, type: 'plant_total', target: 50, resource: 'any', text: 'Planta 50 cultivos.', rewardMoney: 800, rewardMedals: 8, counter: 'plantsTotal' },
+            { id: 105, type: 'collect_total', target: 10, resource: 'any', text: 'Recoge 10 productos animales.', rewardMoney: 900, rewardMedals: 9, counter: 'collectionsTotal' },
+        ];
+
+        // --- LOGROS Y MEJORAS ---
+        const ACHIEVEMENTS = [
+            { id: 1, name: 'Primer Sembrador', condition: (s) => s.globalCounters.harvests > 0, rewardMoney: 50, completed: false, description: 'Realiza tu primera cosecha.' },
+            { id: 2, name: 'El Primer Millón', condition: (s) => s.money >= 5000, rewardMoney: 1000, completed: false, description: 'Ten $5000 en tu bolsillo.' },
+            { id: 3, name: 'Gran Terrateniente', condition: (s) => s.plots.filter(p => p.unlocked).length >= 4, rewardMedals: 5, completed: false, description: 'Desbloquea 4 Parcelas.' },
+            { id: 4, name: 'Maestro Ganadero', condition: (s) => s.pens.filter(p => p.animal).length >= 3, rewardMedals: 3, completed: false, description: 'Posee 3 animales activos.' }
+        ];
+        
+        const HOUSE_UPGRADES = [
+            { id: 'harvest_speed', name: 'Tractor Rápido', costMedals: 15, costMoney: 5000, multiplier: 0.25, type: 'efficiency', description: '-25% tiempo de cosecha.', emoji: '🚜' },
+            { id: 'sale_bonus', name: 'Mercado Premium', costMedals: 25, costMoney: 8000, multiplier: 0.10, type: 'money', description: '+10% precio de venta.', emoji: '📈' },
+            { id: 'efficiency_animal', name: 'Pienso Mejorado', costMedals: 20, costMoney: 6000, multiplier: 0.20, type: 'animal_prod', description: '-20% tiempo producción animal.', emoji: '🍚' }
+        ];
+        
+        const HOUSE_COSMETICS = [
+             { id: 'love_sofa', name: 'Sofá del Primer Viaje', costMedals: 5, costMoney: 0, description: 'Un recuerdo especial para la casa.', emoji: '🛋️' },
+             { id: 'neighbor_dog', name: 'El Perro de la Vecina', costMedals: 10, costMoney: 0, description: 'Mascota decorativa.', emoji: '🐕' }
+        ];
+
+        // --- ESTADO INICIAL ---
+        let state = {
+            money: 200,
+            medals: 0, 
+            plots: [ { id: 0, unlocked: true, crop: null, plantedAt: null, isWatered: false } ], // NUEVO: isWatered
+            pens: [ { id: 0, unlocked: true, animal: null, lastProduced: null } ],
+            inventory: {},
+            modal: null,
+            selectedCell: null,
+            globalCounters: {
+                harvests: 0, sells: 0, collections: 0, moneyEarnedToday: 0, moneyEarnedTotalWeek: 0,
+                plantsTotal: 0, expansionsPlot: 0, expansionsPen: 0, collectionsTotal: 0,
+                spendingToday: 0, plantsToday: 0, wateredToday: 0 // NUEVO
+            },
+            quests: { daily: [], weekly: [], lastDailyReset: 0, lastWeeklyReset: 0, streak: 0, streakLastCompleted: 0 },
+            achievements: ACHIEVEMENTS, 
+            upgrades: { harvest_speed: 0, sale_bonus: 0, efficiency_animal: 0, love_sofa: 0, neighbor_dog: 0 } 
+        };
+
+        for (let i = 1; i < 8; i++) state.plots.push({ id: i, unlocked: false, crop: null, plantedAt: null, isWatered: false });
+        for (let i = 1; i < 4; i++) state.pens.push({ id: i, unlocked: false, animal: null, lastProduced: null });
+
+        // --- UTILIDADES ---
+        function getUpgradeMultiplier(id, defaultValue = 1) {
+            const upgrade = [...HOUSE_UPGRADES, ...HOUSE_COSMETICS].find(u => u.id === id);
+            if (state.upgrades[id] && upgrade) {
+                if (upgrade.type === 'efficiency' || upgrade.type === 'animal_prod') return 1 - upgrade.multiplier; 
+                if (upgrade.type === 'money') return 1 + upgrade.multiplier; 
+            }
+            return defaultValue;
+        }
+
+        // Determinar estado de la parcela: 'dry', 'growing', 'ready', 'spoiled'
+        function getPlotStatus(plot) {
+            if (!plot.crop) return 'empty';
+            if (!plot.isWatered) return 'dry';
+
+            const crop = CROPS[plot.crop];
+            const growthTime = crop.time * getUpgradeMultiplier('harvest_speed');
+            const spoilTime = growthTime * SPOIL_FACTOR;
+            const elapsed = Date.now() - plot.plantedAt;
+
+            if (elapsed >= growthTime + spoilTime) return 'spoiled';
+            if (elapsed >= growthTime) return 'ready';
+            return 'growing';
+        }
+
+        function getTimeDisplay(plot) {
+            const status = getPlotStatus(plot);
+            if (status === 'dry') return '💧 Falta Agua';
+            if (status === 'spoiled') return '💀 Podrido';
+            if (status === 'ready') return '✨ LISTO';
+            
+            // Growing logic
+            const crop = CROPS[plot.crop];
+            const growthTime = crop.time * getUpgradeMultiplier('harvest_speed');
+            const elapsed = Date.now() - plot.plantedAt;
+            const remaining = Math.max(0, growthTime - elapsed);
+            
+            const hours = Math.floor(remaining / 3600000);
+            const minutes = Math.floor((remaining % 3600000) / 60000);
+            const seconds = Math.floor((remaining % 60000) / 1000);
+            
+            if (hours > 0) return `${hours}h ${minutes}m`;
+            if (minutes > 0) return `${minutes}:${seconds.toString().padStart(2, '0')}m`;
+            return `${seconds}s`;
+        }
+        
+        // Timer de animales (simple)
+        function getAnimalTimer(startTime, duration) {
+            const adjustedDuration = duration * getUpgradeMultiplier('efficiency_animal');
+            const elapsed = Date.now() - startTime;
+            const remaining = Math.max(0, adjustedDuration - elapsed);
+            if (remaining === 0) return '✨ LISTO';
+            const hours = Math.floor(remaining / 3600000);
+            const minutes = Math.floor((remaining % 3600000) / 60000);
+            const seconds = Math.floor((remaining % 60000) / 1000);
+            return minutes > 0 ? `${minutes}m` : `${seconds}s`;
+        }
+
+        function showNotification(message, isError = false) {
+            const area = document.getElementById('notification-area');
+            if (!area) return;
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            if (isError) toast.style.backgroundColor = '#c53030';
+            toast.textContent = message;
+            area.appendChild(toast);
+            setTimeout(() => { toast.classList.add('show'); }, 10);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => { if(area.contains(toast)) area.removeChild(toast); }, 300);
+            }, 3000);
+        }
+
+        // --- SISTEMA DE MISIONES ---
+        function generateNewQuests() {
+            const now = Date.now();
+            let newDaily = false;
+
+            if (now - state.quests.lastDailyReset > DAY_IN_MS) {
+                const completedYesterday = state.quests.daily.length > 0 && state.quests.daily.every(q => q.completed);
+                if (completedYesterday) {
+                    state.quests.streak++;
+                    showNotification(`🔥 ¡Racha aumentada a ${state.quests.streak} días!`);
+                    if (state.quests.streak % 7 === 0) {
+                        state.money += 2000; state.medals += 50;
+                        showNotification(`⭐ ¡BONO SEMANAL! +$2000 y 50 Medallas!`);
+                    }
+                } else if (state.quests.daily.length > 0) {
+                    state.quests.streak = 0;
+                    showNotification('Racha perdida. ¡Vuelve a empezar!');
+                }
+
+                state.quests.daily = [];
+                const shuffled = DAILY_QUEST_TEMPLATES.sort(() => 0.5 - Math.random());
+                for (let i=0; i<3; i++) state.quests.daily.push({ ...shuffled[i], progress: 0, completed: false, claimed: false });
+                
+                state.globalCounters.moneyEarnedToday = 0;
+                state.globalCounters.spendingToday = 0;
+                state.globalCounters.plantsToday = 0;
+                state.globalCounters.wateredToday = 0;
+                
+                state.quests.lastDailyReset = now;
+                newDaily = true;
+            }
+
+            if (now - state.quests.lastWeeklyReset > WEEK_IN_MS) {
+                state.quests.weekly = WEEKLY_QUEST_TEMPLATES.map(t => ({ ...t, progress: 0, completed: false, claimed: false }));
+                // Reset contadores semanales
+                state.globalCounters.moneyEarnedTotalWeek = 0;
+                state.globalCounters.plantsTotal = 0;
+                state.globalCounters.expansionsPlot = 0;
+                state.globalCounters.expansionsPen = 0;
+                state.globalCounters.collectionsTotal = 0;
+                state.quests.lastWeeklyReset = now;
+            }
+            
+            if(newDaily) saveGame();
+        }
+
+        function checkQuests(type, resource, value = 1) {
+            let updated = false;
+            state.quests.daily.forEach(q => {
+                if (q.completed) return;
+                const match = q.type === type && (q.resource === 'any' || q.resource === resource || (typeof resource === 'string' && resource.includes(q.resource)));
+                if (match) {
+                    q.progress = Math.min(q.target, q.progress + value);
+                    if (q.progress >= q.target) {
+                        q.completed = true;
+                        showNotification(`✅ Misión Completada: ${q.text}`);
+                    }
+                    updated = true;
+                }
+            });
+            state.quests.weekly.forEach(q => {
+                if (q.completed) return;
+                if (q.type === type && q.counter in state.globalCounters) {
+                    state.globalCounters[q.counter] = Math.min(q.target, state.globalCounters[q.counter] + value);
+                    q.progress = state.globalCounters[q.counter];
+                    if (q.progress >= q.target) {
+                        q.completed = true;
+                        showNotification(`🏆 Misión Semanal: ${q.text}`);
+                    }
+                    updated = true;
+                }
+            });
+            if (updated) saveGame();
+        }
+
+        function claimQuestReward(type, index) {
+            const list = type === 'daily' ? state.quests.daily : state.quests.weekly;
+            const quest = list[index];
+            if (!quest || !quest.completed || quest.claimed) return;
+            state.money += quest.rewardMoney;
+            state.medals += quest.rewardMedals;
+            quest.claimed = true;
+            showNotification(`Recompensa reclamada: +$${quest.rewardMoney} / +${quest.rewardMedals}🏅`);
+            saveGame(); render();
+        }
+
+        function checkAchievements() {
+             state.achievements.forEach(ach => {
+                if (ach.completed) return;
+                if (ach.condition(state)) {
+                    ach.completed = true;
+                    state.money += ach.rewardMoney || 0;
+                    state.medals += ach.rewardMedals || 0;
+                    showNotification(`⭐ LOGRO: ${ach.name}`);
+                    saveGame();
+                }
+            });
+        }
+
+        // --- ACCIONES DE JUEGO ---
+        function plantCrop(plotId, cropKey) {
+            const crop = CROPS[cropKey];
+            if (state.money < crop.cost) { showNotification('Falta dinero', true); return; }
+            
+            const plot = state.plots.find(p => p.id === plotId);
+            plot.crop = cropKey;
+            plot.plantedAt = null; // Aún no empieza a crecer
+            plot.isWatered = false; // Necesita agua
+            
+            state.money -= crop.cost;
+            state.modal = null;
+            
+            checkQuests('plant', crop.name, 1);
+            checkQuests('spend', 'any', crop.cost);
+            state.globalCounters.plantsTotal++;
+            state.globalCounters.plantsToday++;
+            state.globalCounters.spendingToday += crop.cost;
+
+            showNotification(`🌱 ${crop.name} plantada. ¡Ríegala para que crezca!`);
+            saveGame(); render();
+        }
+
+        function waterCrop(plotId) {
+            const plot = state.plots.find(p => p.id === plotId);
+            if (!plot.crop || plot.isWatered) return;
+
+            plot.isWatered = true;
+            plot.plantedAt = Date.now(); // Empieza a crecer AHORA
+            
+            state.globalCounters.wateredToday++;
+            checkQuests('water', 'any', 1);
+
+            showNotification('💧 Cultivo regado. ¡Empieza a crecer!');
+            saveGame(); render();
+        }
+
+        function harvestCrop(plotId) {
+            const plot = state.plots.find(p => p.id === plotId);
+            if (!plot.crop) return;
+            
+            const status = getPlotStatus(plot);
+
+            if (status === 'dry') {
+                showNotification('💧 ¡Está seco! Necesitas regarlo.', true);
+                waterCrop(plotId); // Auto-regar al clickar si está seco (mejora UX)
+                return;
+            }
+
+            if (status === 'spoiled') {
+                showNotification('💀 El cultivo se pudrió. Limpiando parcela...', true);
+                plot.crop = null;
+                plot.plantedAt = null;
+                plot.isWatered = false;
+                saveGame(); render();
+                return;
+            }
+
+            if (status === 'growing') {
+                showNotification('⏰ Aún está creciendo...', true);
+                return;
+            }
+
+            // Status Ready
+            const crop = CROPS[plot.crop];
+            const itemKey = `${crop.emoji} ${crop.name}`;
+            state.inventory[itemKey] = (state.inventory[itemKey] || 0) + 1;
+            
+            state.globalCounters.harvests++;
+            checkQuests('harvest', crop.name, 1);
+            
+            plot.crop = null;
+            plot.plantedAt = null;
+            plot.isWatered = false;
+
+            showNotification(`✨ Cosechaste 1 ${crop.name}`);
+            checkAchievements(); saveGame(); render();
+        }
+
+        function buyAnimal(penId, animalKey) {
+            const animal = ANIMALS[animalKey];
+            if (state.money < animal.cost) { showNotification('Falta dinero', true); return; }
+            
+            const pen = state.pens.find(p => p.id === penId);
+            pen.animal = animalKey;
+            pen.lastProduced = Date.now();
+            
+            state.money -= animal.cost;
+            state.globalCounters.spendingToday += animal.cost;
+            checkQuests('spend', 'any', animal.cost);
+            state.modal = null;
+
+            showNotification(`🐔 Compraste 1 ${animal.name}`);
+            saveGame(); render();
+        }
+
+        function collectProduct(penId) {
+            const pen = state.pens.find(p => p.id === penId);
+            const animal = ANIMALS[pen.animal];
+            
+            // Check food
+            const consumedCrop = Object.values(CROPS).find(c => c.name === animal.consumes);
+            const consumedKey = consumedCrop ? `${consumedCrop.emoji} ${consumedCrop.name}` : null;
+            if (consumedKey && (state.inventory[consumedKey] || 0) < animal.consumptionAmount) {
+                showNotification(`❌ Falta ${animal.consumptionAmount} ${animal.consumes} para comer.`, true);
+                return;
+            }
+
+            const adjustedTime = animal.time * getUpgradeMultiplier('efficiency_animal');
+            if (Date.now() - pen.lastProduced < adjustedTime) {
+                showNotification('⏰ Aún no produce.', true);
+                return;
+            }
+
+            // Consume food & Produce
+            if (consumedKey) {
+                state.inventory[consumedKey] -= animal.consumptionAmount;
+                if (state.inventory[consumedKey] <= 0) delete state.inventory[consumedKey];
+            }
+            
+            const itemKey = `${animal.produces} ${animal.productName}`;
+            state.inventory[itemKey] = (state.inventory[itemKey] || 0) + 1;
+            pen.lastProduced = Date.now();
+            
+            state.globalCounters.collections++;
+            state.globalCounters.collectionsTotal++;
+            checkQuests('collect', ANIMAL_PRODUCT_EMOJIS[animal.produces], 1);
+            checkQuests('collect_total', 'any', 1);
+
+            showNotification(`Recogiste 1 ${animal.productName}`);
+            saveGame(); render();
+        }
+
+        function unlockLand(type, id) {
+            const cost = type === 'plot' ? PLOT_COSTS[id] : PEN_COSTS[id];
+            if (state.money < cost) { showNotification('Falta dinero', true); return; }
+            
+            const list = type === 'plot' ? state.plots : state.pens;
+            list.find(p => p.id === id).unlocked = true;
+            state.money -= cost;
+            
+            if(type === 'plot') { state.globalCounters.expansionsPlot++; checkQuests('expansion', 'plot', 1); }
+            else { state.globalCounters.expansionsPen++; checkQuests('expansion', 'pen', 1); }
+            
+            state.modal = null;
+            showNotification('🔓 Desbloqueado con éxito');
+            checkAchievements(); saveGame(); render();
+        }
+
+        function sellItem(itemKey) {
+            if (!state.inventory[itemKey]) return;
+            const qty = state.inventory[itemKey];
+            
+            let price = 0;
+            Object.values(CROPS).forEach(c => { if(itemKey.includes(c.name)) price = c.sell; });
+            Object.values(ANIMALS).forEach(a => { if(itemKey.includes(a.productName)) price = a.sell; });
+            price = Math.round(price * getUpgradeMultiplier('sale_bonus'));
+            
+            const total = price * qty;
+            state.money += total;
+            delete state.inventory[itemKey];
+            
+            state.globalCounters.sells += qty;
+            state.globalCounters.moneyEarnedToday += total;
+            state.globalCounters.moneyEarnedTotalWeek += total;
+            checkQuests('sell', 'any', qty);
+            checkQuests('money', 'any', total);
+            checkQuests('money_total', 'any', total);
+
+            showNotification(`💵 Vendiste todo por $${total}`);
+            checkAchievements(); saveGame(); render();
+        }
+
+        function buyUpgrade(id) {
+            const item = [...HOUSE_UPGRADES, ...HOUSE_COSMETICS].find(u => u.id === id);
+            if (state.upgrades[id]) { showNotification('Ya lo tienes', true); return; }
+            if (state.money < item.costMoney || state.medals < item.costMedals) { showNotification('Faltan recursos', true); return; }
+            
+            state.money -= item.costMoney;
+            state.medals -= item.costMedals;
+            state.upgrades[id] = 1;
+            showNotification(`✨ ¡${item.name} conseguido!`);
+            saveGame(); render();
+        }
+
+        // --- SISTEMA DE GUARDADO ---
+        async function saveGame() {
+    localStorage.setItem('farm-v1', JSON.stringify(state)); // Respaldo local
+
+    if (currentUser) {
+        await _supabase.from('farm_saves').upsert({
+            id: currentUser.id,
+            state_json: state,
+            updated_at: new Date().toISOString()
+        });
+    }
+}
+
+async function loadGame() {
+    if (currentUser) {
+        const { data } = await _supabase
+    .from('farm_saves')
+    .select('state_json')
+    .maybeSingle();
+        
+        if (data) {
+            state = data.state_json;
+            generateNewQuests(); // <-- AGREGA ESTO
+            render();
+            return;
+        }
+    }
+
+    const localData = localStorage.getItem('farm-v1');
+    if (localData) {
+        state = JSON.parse(localData);
+        generateNewQuests(); // <-- Y ESTO
+        render();
+    }
+}
+        // --- RENDER ---
+        function openModal(t, id) { state.modal = t; state.selectedCell = id; render(); }
+        function closeModal() { state.modal = null; render(); }
+
+        function render() {
+            const app = document.getElementById('app');
+            
+            // Header
+            let html = `
+                <div style="position:fixed; top:0; width:100%; height:60px; background:#2f855a; color:white; display:flex; align-items:center; padding:0 20px; justify-content:space-between; z-index:100; box-shadow:0 2px 5px rgba(0,0,0,0.2);">
+                    <div>
+                        <div style="font-weight:bold; font-size:1.1rem;">🌾 Granja V1.0</div>
+                        <div style="font-size:0.8rem;">💰$${state.money} 🏅${state.medals} 🔥${state.quests.streak}</div>
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <button onclick="openModal('quests')">📜</button>
+                        <button onclick="openModal('shop')">🏪</button>
+                        <button onclick="openModal('inventory')">📦</button>
+                        <button onclick="openModal('house')">🏠</button>
+                        <button onclick="openModal('upgrades')">🏠</button>
+                    </div>
+                </div>
+                <div style="margin-top:70px; padding:20px; padding-bottom:100px; display:flex; flex-direction:column; align-items:center; gap:25px; min-height:calc(100vh - 70px);">
+            `; 
+
+            // Parcelas
+            html += `<div class="area-label">🌱 Cultivos (Click para Acciones)</div>
+                     <div style="display:grid; grid-template-columns:repeat(4, 80px); gap:10px;">`;
+            state.plots.forEach(p => {
+                if (!p.unlocked) {
+                    html += `<div class="grid-cell locked" onclick="unlockLand('plot', ${p.id})">🔒<div class="timer">$${PLOT_COSTS[p.id]}</div></div>`;
+                } else if (!p.crop) {
+                    html += `<div class="grid-cell empty" onclick="openModal('crop', ${p.id})">🌱</div>`;
+                } else {
+                    const status = getPlotStatus(p);
+                    const cssClass = status; // dry, growing, ready, spoiled
+                    const icon = CROPS[p.crop].emoji;
+                    html += `<div class="grid-cell ${cssClass}" onclick="${status === 'dry' ? `waterCrop(${p.id})` : `harvestCrop(${p.id})`}">
+                                ${status === 'spoiled' ? '💀' : icon}
+                                <div class="timer">${getTimeDisplay(p)}</div>
+                             </div>`;
+                }
+            });
+            html += `</div>`;
+
+            // Corrales
+            html += `<div class="area-label" style="margin-top:20px;">🐔 Animales</div>
+                     <div style="display:grid; grid-template-columns:repeat(4, 80px); gap:10px;">`;
+            state.pens.forEach(p => {
+                if (!p.unlocked) {
+                    html += `<div class="grid-cell locked" onclick="unlockLand('pen', ${p.id})">🔒<div class="timer">$${PEN_COSTS[p.id]}</div></div>`;
+                } else if (!p.animal) {
+                    html += `<div class="grid-cell empty" onclick="openModal('animal', ${p.id})">➕</div>`;
+                } else {
+                    const ready = (Date.now() - p.lastProduced) >= ANIMALS[p.animal].time * getUpgradeMultiplier('efficiency_animal');
+                    html += `<div class="grid-cell ${ready ? 'ready' : 'growing'}" onclick="collectProduct(${p.id})">
+                                ${ANIMALS[p.animal].emoji}
+                                <div class="timer">${getAnimalTimer(p.lastProduced, ANIMALS[p.animal].time)}</div>
+                             </div>`;
+                }
+            });
+            html += `</div>`;
+            
+            html += `</div>`; // End container
+
+            // Casa
+html += `
+    <div class="house-building" onclick="openModal('house')">
+        <div class="house-stats">
+            <div style="font-weight:bold; font-size:1.1rem; margin-bottom:8px; text-align:center;">
+                Mi Granja
+            </div>
+            <div style="display:flex; justify-content:space-around; font-size:0.85rem;">
+                <div>🏆 ${state.achievements.filter(a=>a.completed).length}/${ACHIEVEMENTS.length}</div>
+                <div>⚡ ${Object.values(state.upgrades).filter(v=>v).length} Mejoras</div>
+            </div>
+            ${state.upgrades.love_sofa ? '<div style="text-align:center; margin-top:8px;">🛋️</div>' : ''}
+            ${state.upgrades.neighbor_dog ? '<div style="text-align:center; margin-top:8px;">🐕</div>' : ''}
+        </div>
+    </div>
+`;
+// --- Modals ---
+let content = '';
+
+if (state.modal === 'crop') {
+    content = Object.entries(CROPS).map(([k,c]) => `
+        <div class="shop-item" onclick="plantCrop(${state.selectedCell}, '${k}')">
+            <div style="font-size:2rem;">${c.emoji}</div>
+            <div style="flex:1;">
+                <b>${c.name}</b><br>
+                <small>⏱️${c.time/60000}m 💰$${c.cost}</small>
+            </div>
+        </div>
+    `).join('');
+} 
+else if (state.modal === 'animal') {
+    content = Object.entries(ANIMALS).map(([k,a]) => `
+        <div class="shop-item" onclick="buyAnimal(${state.selectedCell}, '${k}')">
+            <div style="font-size:2rem;">${a.emoji}</div>
+            <div style="flex:1;">
+                <b>${a.name}</b><br>
+                <small>Comer: ${a.consumes} 💰$${a.cost}</small>
+            </div>
+        </div>
+    `).join('');
+}
+else if (state.modal === 'upgrades') {
+    content =
+        `<h3 style="margin-bottom:10px;">🏠 Casa – Mejoras Permanentes</h3>` +
+
+        HOUSE_UPGRADES.map(u => `
+            <div class="shop-item ${state.upgrades[u.id] ? 'disabled' : ''}"
+                 onclick="${state.upgrades[u.id] ? '' : `buyUpgrade('${u.id}')`}">
+                <div style="font-size:1.8rem;">${u.emoji}</div>
+                <div style="flex:1;">
+                    <b>${u.name}</b><br>
+                    <small>${u.description}</small><br>
+                    <small>💰${u.costMoney} 🏅${u.costMedals}</small>
+                </div>
+                <div>${state.upgrades[u.id] ? '✅' : '🛒'}</div>
+            </div>
+        `).join('')
+
+        +
+
+        `<h4 style="margin-top:15px;">Decoración</h4>` +
+
+        HOUSE_COSMETICS.map(u => `
+            <div class="shop-item ${state.upgrades[u.id] ? 'disabled' : ''}"
+                 onclick="${state.upgrades[u.id] ? '' : `buyUpgrade('${u.id}')`}">
+                <div style="font-size:1.8rem;">${u.emoji}</div>
+                <div style="flex:1;">
+                    <b>${u.name}</b><br>
+                    <small>${u.description}</small>
+                </div>
+                <div>${state.upgrades[u.id] ? '✅' : '🛒'}</div>
+            </div>
+        `).join('');
+}
+else if (state.modal === 'inventory') {
+    content = Object.entries(state.inventory).map(([k,q]) => `
+        <div class="shop-item" onclick="sellItem('${k}')">
+            <div style="flex:1;"><b>${k}</b> x${q}</div>
+            <div style="color:green; font-weight:bold;">Vender Todo</div>
+        </div>
+    `).join('') || '<div style="text-align:center; padding:20px;">Vacío</div>';
+}
+else if (state.modal === 'shop') {
+    content = `<h3>Expansiones</h3>`;
+}
+else if (state.modal === 'quests') {
+    content = `
+        <h3 class="modal-title">📜 Misiones Diarias</h3>
+        <div style="background:#fef5e7; padding:10px; border-radius:8px; margin-bottom:15px; text-align:center;">
+            🔥 Racha: <b>${state.quests.streak}</b> días
+        </div>
+        ${state.quests.daily.map((q,i) => {
+            const bgColor = q.claimed ? '#f0fff4' : (q.completed ? '#bee3f8' : '#ffffff');
+            const icon = q.claimed ? '✅' : (q.completed ? '🎁' : '🔒');
+            return `
+                <div class="shop-item" 
+                     style="background:${bgColor}; ${q.completed && !q.claimed ? 'border-color:#48bb78; border-width:3px;' : ''}" 
+                     onclick="${q.completed && !q.claimed ? `claimQuestReward('daily', ${i})` : ''}">
+                    <div style="flex:1;">
+                        <div style="font-weight:bold; margin-bottom:4px;">${q.text}</div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <div style="background:#e2e8f0; border-radius:12px; padding:2px 8px; font-size:0.85rem;">
+                                <b>${q.progress}/${q.target}</b>
+                            </div>
+                            ${q.completed && !q.claimed ? `<div style="color:#38a169; font-size:0.85rem;">💰$${q.rewardMoney} 🏅${q.rewardMedals}</div>` : ''}
+                        </div>
+                    </div>
+                    <div style="font-size:1.5rem;">${icon}</div>
+                </div>
+            `;
+        }).join('')}
+        
+        <h3 class="modal-title" style="margin-top:25px;">🏆 Misiones Semanales</h3>
+        ${state.quests.weekly.map((q,i) => {
+            const bgColor = q.claimed ? '#f0fff4' : (q.completed ? '#bee3f8' : '#ffffff');
+            const icon = q.claimed ? '✅' : (q.completed ? '🎁' : '🔒');
+            return `
+                <div class="shop-item" 
+                     style="background:${bgColor}; ${q.completed && !q.claimed ? 'border-color:#f6ad55; border-width:3px;' : ''}" 
+                     onclick="${q.completed && !q.claimed ? `claimQuestReward('weekly', ${i})` : ''}">
+                    <div style="flex:1;">
+                        <div style="font-weight:bold; margin-bottom:4px;">${q.text}</div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <div style="background:#e2e8f0; border-radius:12px; padding:2px 8px; font-size:0.85rem;">
+                                <b>${q.progress}/${q.target}</b>
+                            </div>
+                            ${q.completed && !q.claimed ? `<div style="color:#d69e2e; font-size:0.85rem;">💰$${q.rewardMoney} 🏅${q.rewardMedals}</div>` : ''}
+                        </div>
+                    </div>
+                    <div style="font-size:1.5rem;">${icon}</div>
+                </div>
+            `;
+        }).join('')}
+    `;
+}
+else if (state.modal === 'house') {
+    content = `
+        <div class="shop-item">
+            <div style="flex:1;">
+                <b>Sincronización Nube</b><br>
+                <small>${currentUser ? currentUser.email : 'Sin conexión'}</small>
+            </div>
+            <button onclick="${currentUser ? '_supabase.auth.signOut()' : 'loginUser()'}">
+                ${currentUser ? 'Salir' : 'Entrar'}
+            </button>
+        </div>
+    `;
+}
+
+if (state.modal) {
+    html += `
+        <div class="modal" onclick="closeModal()">
+            <div class="modal-content" onclick="event.stopPropagation()">
+                <button class="modal-close" onclick="closeModal()">✖</button>
+                ${content}
+            </div>
+        </div>
+    `;
+}
+                if (state.modal === 'crop') {
+                    content = Object.entries(CROPS).map(([k,c]) => `
+                        <div class="shop-item" onclick="plantCrop(${state.selectedCell}, '${k}')">
+                            <div style="font-size:2rem;">${c.emoji}</div>
+                            <div style="flex:1;">
+                                <b>${c.name}</b><br><small>⏱️${c.time/60000}m 💰$${c.cost}</small>
+                            </div>
+                        </div>`).join('');
+                } else if (state.modal === 'animal') {
+                    content = Object.entries(ANIMALS).map(([k,a]) => `
+                        <div class="shop-item" onclick="buyAnimal(${state.selectedCell}, '${k}')">
+                            <div style="font-size:2rem;">${a.emoji}</div>
+                            <div style="flex:1;">
+                                <b>${a.name}</b><br><small>Comer: ${a.consumes} 💰$${a.cost}</small>
+                            </div>
+                        </div>`).join('');
+                } else if (state.modal === 'inventory') {
+                    content = Object.entries(state.inventory).map(([k,q]) => `
+                        <div class="shop-item" onclick="sellItem('${k}')">
+                            <div style="flex:1;"><b>${k}</b> x${q}</div>
+                            <div style="color:green; font-weight:bold;">Vender Todo</div>
+                        </div>`).join('') || '<div style="text-align:center; padding:20px;">Vacío</div>';
+                } else if (state.modal === 'shop') {
+                    content = `<h3>Expansiones</h3>` +
+                        (state.plots.find(p=>!p.unlocked) ? `<div class="shop-item" onclick="unlockLand('plot', ${state.plots.find(p=>!p.unlocked).id})"><b>Nueva Parcela</b> 💰$${PLOT_COSTS[state.plots.find(p=>!p.unlocked).id]}</div>` : '') +
+                        (state.pens.find(p=>!p.unlocked) ? `<div class="shop-item" onclick="unlockLand('pen', ${state.pens.find(p=>!p.unlocked).id})"><b>Nuevo Corral</b> 💰$${PEN_COSTS[state.pens.find(p=>!p.unlocked).id]}</div>` : '');
+                } else if (state.modal === 'quests') {
+                    content = `<h3>Diarias (Reset 24h)</h3>` + state.quests.daily.map((q,i) => 
+                        `<div class="shop-item" style="background:${q.completed? (q.claimed?'#f0fff4':'#bee3f8'):'white'}" onclick="claimQuestReward('daily', ${i})">
+                            <div style="flex:1;"><small>${q.text}</small><br><b>${q.progress}/${q.target}</b></div>
+                            <div>${q.completed && !q.claimed ? '🎁' : (q.claimed?'✅':'🔒')}</div>
+                         </div>`).join('');
+} else if (state.modal === 'house') {
+    content = `
+        <div class="shop-item" style="background:#f0f9ff; border-color:#90cdf4;">
+            <div style="flex:1;">
+                <b>Sincronización Nube</b><br>
+                <small>${currentUser ? currentUser.email : 'Sin conexión'}</small>
+            </div>
+            <button onclick="${currentUser ? '_supabase.auth.signOut()' : 'loginUser()'}"
+                style="background:#3182ce; color:white; padding:5px 10px; border-radius:6px; font-size:0.8rem;">
+                ${currentUser ? 'Salir' : 'Entrar'}
+            </button>
+        </div>
+    `;
+}
+            app.innerHTML = html;
+        }
+
+// Escuchar cambios de sesión
+_supabase.auth.onAuthStateChange((event, session) => {
+    if (session) {
+        currentUser = session.user;
+        showNotification("👋 Sesión iniciada: " + currentUser.email);
+        loadGame(); 
+    } else {
+        currentUser = null;
+    }
+    render();
+});
+// Inicializar el juego
+generateNewQuests(); // <-- ESTO FALTABA
+loadGame();
+render();
+setInterval(() => { if(!state.modal) render(); }, 1000);
+    </script>
+</body>
+</html>
