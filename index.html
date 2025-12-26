@@ -361,7 +361,7 @@ async function loginUser() {
         let state = {
             money: 200,
             medals: 0, 
-            plots: [ { id: 0, unlocked: true, crop: null, plantedAt: null, isWatered: false } ], // NUEVO: isWatered
+            plots: [ { id: 0, unlocked: true, crop: null, plantedAt: null, isWatered: false, lastWatered: null } ],
             pens: [ { id: 0, unlocked: true, animal: null, lastProduced: null } ],
             inventory: {},
             modal: null,
@@ -376,7 +376,7 @@ async function loginUser() {
             upgrades: { harvest_speed: 0, sale_bonus: 0, efficiency_animal: 0, love_sofa: 0, neighbor_dog: 0 } 
         };
 
-        for (let i = 1; i < 8; i++) state.plots.push({ id: i, unlocked: false, crop: null, plantedAt: null, isWatered: false });
+        for (let i = 1; i < 8; i++) state.plots.push({ id: i, unlocked: false, crop: null, plantedAt: null, isWatered: false, lastWatered: null });
         for (let i = 1; i < 4; i++) state.pens.push({ id: i, unlocked: false, animal: null, lastProduced: null });
 
         // --- UTILIDADES ---
@@ -391,8 +391,29 @@ async function loginUser() {
 
         // Determinar estado de la parcela: 'dry', 'growing', 'ready', 'spoiled'
         function getPlotStatus(plot) {
-            if (!plot.crop) return 'empty';
-            if (!plot.isWatered) return 'dry';
+    if (!plot.crop) return 'empty';
+    if (!plot.isWatered) return 'dry';
+
+    const HOUR = 60 * 60 * 1000;
+    const timeSinceWatering = Date.now() - plot.lastWatered;
+    
+    // Si pasaron más de 2 horas sin regar, muere
+    if (timeSinceWatering > 2 * HOUR) return 'spoiled';
+    
+    const crop = CROPS[plot.crop];
+    const growthTime = crop.time * getUpgradeMultiplier('harvest_speed');
+    const elapsed = Date.now() - plot.plantedAt;
+
+    // Después de 1 hora sin regar, crece más lento (50%)
+    const slowGrowth = timeSinceWatering > HOUR;
+    const effectiveElapsed = slowGrowth ? elapsed * 0.5 : elapsed;
+
+    const spoilTime = growthTime * SPOIL_FACTOR;
+    if (effectiveElapsed >= growthTime + spoilTime) return 'spoiled';
+    if (effectiveElapsed >= growthTime) return 'ready';
+    
+    return slowGrowth ? 'dry' : 'growing';
+}
 
             const crop = CROPS[plot.crop];
             const growthTime = crop.time * getUpgradeMultiplier('harvest_speed');
@@ -570,21 +591,23 @@ async function loginUser() {
             showNotification(`🌱 ${crop.name} plantada. ¡Ríegala para que crezca!`);
             saveGame(); render();
         }
+function waterCrop(plotId) {
+    const plot = state.plots.find(p => p.id === plotId);
+    if (!plot.crop) return;
 
-        function waterCrop(plotId) {
-            const plot = state.plots.find(p => p.id === plotId);
-            if (!plot.crop || plot.isWatered) return;
+    plot.isWatered = true;
+    plot.lastWatered = Date.now(); // Registrar cuándo se regó
+    
+    if (!plot.plantedAt) {
+        plot.plantedAt = Date.now(); // Primera vez, empieza a crecer
+    }
+    
+    state.globalCounters.wateredToday++;
+    checkQuests('water', 'any', 1);
 
-            plot.isWatered = true;
-            plot.plantedAt = Date.now(); // Empieza a crecer AHORA
-            
-            state.globalCounters.wateredToday++;
-            checkQuests('water', 'any', 1);
-
-            showNotification('💧 Cultivo regado. ¡Empieza a crecer!');
-            saveGame(); render();
-        }
-
+    showNotification('💧 Cultivo regado. ¡Empieza a crecer!');
+    saveGame(); render();
+}
         function harvestCrop(plotId) {
     const plot = state.plots.find(p => p.id === plotId);
     if (!plot.crop) return;
@@ -613,6 +636,12 @@ async function loginUser() {
     saveGame();
     console.log('✅ Guardado completo'); // 
     render();
+
+plot.crop = null;
+plot.plantedAt = null;
+plot.isWatered = false;
+plot.lastWatered = null;
+            
 }
 
         function buyAnimal(penId, animalKey) {
@@ -1085,6 +1114,7 @@ window.fastForward = function(hours = 1) {
     </script>
 </body>
 </html>
+
 
 
 
