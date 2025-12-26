@@ -415,16 +415,6 @@ async function loginUser() {
     return slowGrowth ? 'dry' : 'growing';
 }
 
-            const crop = CROPS[plot.crop];
-            const growthTime = crop.time * getUpgradeMultiplier('harvest_speed');
-            const spoilTime = growthTime * SPOIL_FACTOR;
-            const elapsed = Date.now() - plot.plantedAt;
-
-            if (elapsed >= growthTime + spoilTime) return 'spoiled';
-            if (elapsed >= growthTime) return 'ready';
-            return 'growing';
-        }
-
         function getTimeDisplay(plot) {
             const status = getPlotStatus(plot);
             if (status === 'dry') return '💧 Falta Agua';
@@ -1114,6 +1104,7 @@ window.fastForward = function(hours = 1) {
     </script>
 </body>
 </html>
+
 
 
 
