@@ -1088,11 +1088,11 @@ window.godMode = function() {
     saveGame();
     render();
 };
-
-window.fastForward = function(hours = 1) {
+    window.fastForward = function(hours = 1) {
     const ms = hours * 60 * 60 * 1000;
     state.plots.forEach(p => {
         if (p.plantedAt) p.plantedAt -= ms;
+        if (p.lastWatered) p.lastWatered -= ms;  // <-- AGREGA ESTO
     });
     state.pens.forEach(p => {
         if (p.lastProduced) p.lastProduced -= ms;
@@ -1104,6 +1104,7 @@ window.fastForward = function(hours = 1) {
     </script>
 </body>
 </html>
+
 
 
 
