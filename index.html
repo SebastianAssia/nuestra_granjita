@@ -1065,7 +1065,7 @@ else if (state.modal === 'house') {
     `;
 }
 
-if (state.modal) {
+else if (state.modal === 'map') {
     content = `
         <h3 class="modal-title">🗺️ Mapa Mundial</h3>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-top:20px;">
@@ -1092,8 +1092,6 @@ if (state.modal) {
         </div>
     `;
 }
-    else if (state.modal === 'map') {
-    
     html += `
         <div class="modal" onclick="closeModal()">
             <div class="modal-content" onclick="event.stopPropagation()">
@@ -1194,6 +1192,7 @@ window.godMode = function() {
     </script>
 </body>
 </html>
+
 
 
 
