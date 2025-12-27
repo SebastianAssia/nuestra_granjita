@@ -1075,22 +1075,22 @@ else if (state.modal === 'map') {
     content = `
         <h3 class="modal-title">🗺️ Mapa Mundial</h3>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-top:20px;">
-            <div class="shop-item" style="flex-direction:column; padding:20px; text-align:center;">
+            <div class="shop-item" style="flex-direction:column; padding:20px; text-align:center;" onclick="startTravel('Montaña')">
                 <div style="font-size:3rem;">⛰️</div>
                 <div style="font-weight:bold; margin-top:10px;">Montaña</div>
                 <small style="color:#718096;">Minería y piedras</small>
             </div>
-            <div class="shop-item" style="flex-direction:column; padding:20px; text-align:center;">
+            <div class="shop-item" style="flex-direction:column; padding:20px; text-align:center;" onclick="startTravel('Bosque')">
                 <div style="font-size:3rem;">🌲</div>
                 <div style="font-weight:bold; margin-top:10px;">Bosque</div>
                 <small style="color:#718096;">Madera y caza</small>
             </div>
-            <div class="shop-item" style="flex-direction:column; padding:20px; text-align:center;">
+            <div class="shop-item" style="flex-direction:column; padding:20px; text-align:center;" onclick="startTravel('Playa')">
                 <div style="font-size:3rem;">🏖️</div>
                 <div style="font-weight:bold; margin-top:10px;">Playa</div>
                 <small style="color:#718096;">Pesca y conchas</small>
             </div>
-            <div class="shop-item" style="flex-direction:column; padding:20px; text-align:center;">
+            <div class="shop-item" style="flex-direction:column; padding:20px; text-align:center;" onclick="startTravel('Pueblo')">
                 <div style="font-size:3rem;">🏘️</div>
                 <div style="font-weight:bold; margin-top:10px;">Pueblo</div>
                 <small style="color:#718096;">Comercio y NPCs</small>
@@ -1154,6 +1154,7 @@ window.godMode = function() {
     </script>
 </body>
 </html>
+
 
 
 
