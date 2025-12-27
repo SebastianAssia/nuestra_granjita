@@ -745,6 +745,17 @@ function waterCrop(plotId) {
             checkAchievements(); saveGame(); render();
         }
 
+        function startTravel(destination) {
+    state.travelData = {
+        destination: destination,
+        startTime: Date.now()
+    };
+    state.modal = null;
+    showNotification(`🚶 Viajando a ${destination}... Llegarás en 30 minutos.`);
+    saveGame();
+    render();
+}
+
         function buyUpgrade(id) {
             const item = [...HOUSE_UPGRADES, ...HOUSE_COSMETICS].find(u => u.id === id);
             if (state.upgrades[id]) { showNotification('Ya lo tienes', true); return; }
@@ -1143,6 +1154,7 @@ window.godMode = function() {
     </script>
 </body>
 </html>
+
 
 
 
