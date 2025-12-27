@@ -361,6 +361,8 @@ async function loginUser() {
         let state = {
             money: 200,
             medals: 0, 
+            playerLocation: 'farm',
+            travelData: { destination: null, startTime: null },
             plots: [ { id: 0, unlocked: true, crop: null, plantedAt: null, isWatered: false, lastWatered: null } ],
             pens: [ { id: 0, unlocked: true, animal: null, lastProduced: null } ],
             inventory: {},
@@ -756,39 +758,97 @@ function waterCrop(plotId) {
         }
 
         // --- SISTEMA DE GUARDADO ---
+
         async function saveGame() {
-    localStorage.setItem('farm-v1', JSON.stringify(state)); // Respaldo local
+    localStorage.setItem('farm-v1', JSON.stringify(state));
 
     if (currentUser) {
+        // Guardar datos compartidos de la granja
         await _supabase.from('farm_saves').upsert({
-            id: currentUser.id,
-            state_json: state,
+            id: 'shared_farm', // ID fijo para la granja compartida
+            state_json: {
+                money: state.money,
+                medals: state.medals,
+                plots: state.plots,
+                pens: state.pens,
+                inventory: state.inventory,
+                globalCounters: state.globalCounters,
+                quests: state.quests,
+                achievements: state.achievements,
+                upgrades: state.upgrades
+            },
             updated_at: new Date().toISOString()
+        });
+
+        // Guardar datos personales del jugador
+        await _supabase.from('player_data').upsert({
+            user_id: currentUser.id,
+            location: state.playerLocation,
+            travel_start_time: state.travelData.startTime,
+            travel_destination: state.travelData.destination
         });
     }
 }
 
-async function loadGame() {
+    async function loadGame() {
     if (currentUser) {
-        const { data } = await _supabase
+        // Cargar datos compartidos de la granja
+        const { data: farmData } = await _supabase
             .from('farm_saves')
             .select('state_json')
+            .eq('id', 'shared_farm')
             .maybeSingle();
         
-        if (data) {
-            state = data.state_json;
+        // Cargar datos personales del jugador
+        const { data: playerData } = await _supabase
+            .from('player_data')
+            .select('*')
+            .eq('user_id', currentUser.id)
+            .maybeSingle();
+        
+        if (farmData) {
+            // Cargar datos compartidos
+            state.money = farmData.state_json.money;
+            state.medals = farmData.state_json.medals;
+            state.plots = farmData.state_json.plots;
+            state.pens = farmData.state_json.pens;
+            state.inventory = farmData.state_json.inventory;
+            state.globalCounters = farmData.state_json.globalCounters;
+            state.quests = farmData.state_json.quests;
+            state.upgrades = farmData.state_json.upgrades;
             
-            // Reconstruir logros con sus funciones
+            // Reconstruir logros
             state.achievements = ACHIEVEMENTS.map(template => {
-                const saved = state.achievements.find(a => a.id === template.id);
+                const saved = farmData.state_json.achievements.find(a => a.id === template.id);
                 return { ...template, completed: saved?.completed || false };
             });
-            
-            generateNewQuests();
-            render();
-            return;
         }
+        
+        if (playerData) {
+            // Cargar datos personales
+            state.playerLocation = playerData.location;
+            state.travelData = {
+                destination: playerData.travel_destination,
+                startTime: playerData.travel_start_time
+            };
+        }
+        
+        generateNewQuests();
+        render();
+        return;
     }
+    
+    const localData = localStorage.getItem('farm-v1');
+    if (localData) {
+        state = JSON.parse(localData);
+        state.achievements = ACHIEVEMENTS.map(template => {
+            const saved = state.achievements.find(a => a.id === template.id);
+            return { ...template, completed: saved?.completed || false };
+        });
+        generateNewQuests();
+        render();
+    }
+}
     
     const localData = localStorage.getItem('farm-v1');
     if (localData) {
@@ -1119,6 +1179,7 @@ window.godMode = function() {
     </script>
 </body>
 </html>
+
 
 
 
