@@ -849,21 +849,6 @@ function waterCrop(plotId) {
         render();
     }
 }
-    
-    const localData = localStorage.getItem('farm-v1');
-    if (localData) {
-        state = JSON.parse(localData);
-        
-        // Reconstruir logros también para guardado local
-        state.achievements = ACHIEVEMENTS.map(template => {
-            const saved = state.achievements.find(a => a.id === template.id);
-            return { ...template, completed: saved?.completed || false };
-        });
-        
-        generateNewQuests();
-        render();
-    }
-}
         // --- RENDER ---
         function openModal(t, id) { state.modal = t; state.selectedCell = id; render(); }
         function closeModal() { state.modal = null; render(); }
@@ -1179,6 +1164,7 @@ window.godMode = function() {
     </script>
 </body>
 </html>
+
 
 
 
