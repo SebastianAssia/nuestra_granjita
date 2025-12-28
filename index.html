@@ -943,29 +943,6 @@ function waterCrop(plotId) {
         function openModal(t, id) { state.modal = t; state.selectedCell = id; render(); }
         function closeModal() { state.modal = null; render(); }
 
-        function render() {
-            const app = document.getElementById('app');
-            
-            // Header
-            let html = `
-                <div style="position:fixed; top:0; width:100%; height:60px; background:#2f855a; color:white; display:flex; align-items:center; padding:0 20px; justify-content:space-between; z-index:100; box-shadow:0 2px 5px rgba(0,0,0,0.2);">
-                    <div>
-                        <div style="font-weight:bold; font-size:1.1rem;">🌾 Granja V1.0</div>
-                        <div style="font-size:0.8rem;">💰$${state.money} 🏅${state.medals} 🔥${state.quests.streak}</div>
-                    </div>
-                    <div style="display:flex; gap:10px;">
-                        <button onclick="openModal('quests')">📜</button>
-                        <button onclick="openModal('shop')">🏪</button>
-                        <button onclick="openModal('inventory')">📦</button>
-                        <button onclick="openModal('house')">🏠</button>
-                        <button onclick="openModal('upgrades')">🏠</button>
-                        <button onclick="openModal('map')">🗺️</button>
-
-                    </div>
-                </div>
-                <div style="margin-top:70px; padding:20px; padding-bottom:100px; display:flex; flex-direction:column; align-items:center; gap:25px; min-height:calc(100vh - 70px);">
-            `; 
-
             function render() {
     const app = document.getElementById('app');
     
@@ -1299,6 +1276,7 @@ window.godMode = function() {
     </script>
 </body>
 </html>
+
 
 
 
