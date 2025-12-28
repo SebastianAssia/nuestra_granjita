@@ -990,14 +990,166 @@ function getActivityTimer(destinationKey, resourceKey) {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
+        function render() {
+    const app = document.getElementById('app');
+    updateEnergy();
+    
+    const travelStatus = checkTravelStatus();
+    
+    // Si estás viajando, mostrar pantalla de viaje
+    if (travelStatus === 'traveling') {
+        renderTravelingScreen();
+        return;
+    }
+    
+    // Si llegaste a un destino, mostrar pantalla del destino
+    if (travelStatus === 'arrived') {
+        renderDestinationScreen();
+        return;
+    }
+    
+    // Si estás en la granja, mostrar pantalla normal
+    renderFarmScreen();
+}
 function render() {
+    const app = document.getElementById('app');
+    updateEnergy();
+    
+    const travelStatus = checkTravelStatus();
+    
+    // Si estás viajando, mostrar pantalla de viaje
+    if (travelStatus === 'traveling') {
+        renderTravelingScreen();
+        return;
+    }
+    
+    // Si llegaste a un destino, mostrar pantalla del destino
+    if (travelStatus === 'arrived') {
+        renderDestinationScreen();
+        return;
+    }
+    
+    // Si estás en la granja, mostrar pantalla normal
+    renderFarmScreen();
+}
+        function renderTravelingScreen() {
+    const app = document.getElementById('app');
+    const remaining = 30 * 60 * 1000 - (Date.now() - state.travelData.startTime);
+    const minutes = Math.floor(remaining / 60000);
+    const seconds = Math.floor((remaining % 60000) / 1000);
+    
+    const html = `
+        <div style="width:100vw; height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; background:linear-gradient(180deg, #667eea 0%, #764ba2 100%);">
+            <div style="text-align:center; color:white;">
+                <div style="font-size:5rem; margin-bottom:30px; animation: bounce 2s infinite;">🚶</div>
+                <h1 style="font-size:2.5rem; margin-bottom:20px;">Viajando a ${state.travelData.destination}</h1>
+                <div style="font-size:3rem; font-weight:bold; margin:30px 0;">
+                    ${minutes}:${seconds.toString().padStart(2, '0')}
+                </div>
+                <p style="font-size:1.2rem; opacity:0.8;">Puedes cerrar el juego y volver después</p>
+            </div>
+        </div>
+        <style>
+           @keyframes bounce {
+                0%, 100% { transform: translateY(0); }
+                50% { transform: translateY(-20px); }
+            }
+        </style>
+    `;
+    
+    app.innerHTML = html;
+}
+
+function renderDestinationScreen() {
+    const app = document.getElementById('app');
+    const destInfo = DESTINATION_INFO[state.travelData.destination];
+    const resources = TRAVEL_RESOURCES[destInfo.key];
+    
+    let html = `
+        <div style="position:fixed; top:0; width:100%; height:60px; background:${destInfo.color}; color:white; display:flex; align-items:center; padding:0 20px; justify-content:space-between; z-index:100; box-shadow:0 2px 5px rgba(0,0,0,0.2);">
+            <div>
+                <div style="font-weight:bold; font-size:1.1rem;">${destInfo.icon} ${state.travelData.destination}</div>
+                <div style="font-size:0.8rem;">💰$${state.money} 🏅${state.medals} ⚡${state.energy}/100</div>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button onclick="openModal('inventory')">📦</button>
+                <button onclick="state.travelData = {destination: null, startTime: null}; saveGame(); render();" style="background:#48bb78; padding:8px 16px; border-radius:6px; border:none; color:white; font-weight:bold; cursor:pointer;">
+                    🏠 Volver a Granja
+                </button>
+            </div>
+        </div>
+        
+        <div style="margin-top:70px; padding:20px; padding-bottom:100px; display:flex; flex-direction:column; align-items:center; gap:25px; min-height:calc(100vh - 70px); background:${destInfo.color}10;">
+            <div class="area-label">${destInfo.icon} ${destInfo.description}</div>
+            
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:15px; width:100%; max-width:800px;">
+    `;
+    
+    Object.entries(resources).forEach(([key, res]) => {
+        const activityId = `${destInfo.key}_${key}`;
+        const inProgress = state.travelActivities[activityId];
+        const timer = getActivityTimer(destInfo.key, key);
+        const isReady = timer === '✨ LISTO';
+        const isDisabled = state.energy < res.cost && !inProgress;
+        
+        html += `
+            <div class="grid-cell ${isReady ? 'ready' : (inProgress ? 'growing' : (isDisabled ? 'locked' : 'empty'))}" 
+                 style="width:auto; height:150px; ${isDisabled ? 'cursor:not-allowed;' : ''}"
+                 onclick="${isDisabled ? '' : (inProgress ? (isReady ? `collectTravelResource('${destInfo.key}', '${key}')` : '') : `startTravelActivity('${destInfo.key}', '${key}')`)}">
+                <div style="font-size:3rem; margin-bottom:10px;">${res.emoji}</div>
+                <div style="font-weight:bold; font-size:1rem;">${res.name}</div>
+                <div class="timer">
+                    ${timer ? timer : `⚡${res.cost} • ⏱️${res.time/60000}m`}
+                </div>
+            </div>
+        `;
+    });
+    
+    html += `
+            </div>
+            
+            <div style="background:rgba(255,255,255,0.9); padding:20px; border-radius:12px; max-width:600px; margin-top:20px;">
+                <h3 style="margin-bottom:10px; font-weight:bold;">💡 Cómo funciona:</h3>
+                <ul style="line-height:1.8;">
+                    <li>Cada actividad consume energía ⚡</li>
+                    <li>La energía se regenera automáticamente (1 cada 3 minutos)</li>
+                    <li>Los recursos recolectados van a tu inventario 📦</li>
+                    <li>Puedes venderlos en la granja por dinero 💰</li>
+                </ul>
+            </div>
+        </div>
+    `;
+    
+    // Modales
+    if (state.modal === 'inventory') {
+        html += `
+            <div class="modal" onclick="closeModal()">
+                <div class="modal-content" onclick="event.stopPropagation()">
+                    <button class="modal-close" onclick="closeModal()">✖</button>
+                    <h3 class="modal-title">📦 Inventario</h3>
+                    ${Object.entries(state.inventory).map(([k,q]) => `
+                        <div class="shop-item" onclick="sellItem('${k}')">
+                            <div style="flex:1;"><b>${k}</b> x${q}</div>
+                            <div style="color:green; font-weight:bold;">Vender Todo</div>
+                        </div>
+                    `).join('') || '<div style="text-align:center; padding:20px;">Vacío</div>'}
+                </div>
+            </div>
+        `;
+    }
+    
+    app.innerHTML = html;
+}
+
+function renderFarmScreen() {
     const app = document.getElementById('app');
     
     let html = `
         <div style="position:fixed; top:0; width:100%; height:60px; background:#2f855a; color:white; display:flex; align-items:center; padding:0 20px; justify-content:space-between; z-index:100; box-shadow:0 2px 5px rgba(0,0,0,0.2);">
             <div>
                 <div style="font-weight:bold; font-size:1.1rem;">🌾 Granja V1.0</div>
-                <div style="font-size:0.8rem;">💰$${state.money} 🏅${state.medals} 🔥${state.quests.streak} ⚡${state.energy}/100</div>            </div>
+                <div style="font-size:0.8rem;">💰$${state.money} 🏅${state.medals} 🔥${state.quests.streak} ⚡${state.energy}/100</div>
+            </div>
             <div style="display:flex; gap:10px;">
                 <button onclick="openModal('quests')">📜</button>
                 <button onclick="openModal('shop')">🏪</button>
@@ -1131,70 +1283,7 @@ function render() {
     else if (state.modal === 'shop') {
         content = `<h3>Expansiones</h3>`;
     }
-else if (state.modal === 'map') {
-    updateEnergy();
-    const travelStatus = checkTravelStatus();
-    
-    if (travelStatus === 'arrived') {
-        const destInfo = DESTINATION_INFO[state.travelData.destination];
-        const resources = TRAVEL_RESOURCES[destInfo.key];
-        
-        content = `
-            <h3 class="modal-title">🏁 ${state.travelData.destination}</h3>
-            <div style="background:#fef5e7; padding:10px; border-radius:8px; margin-bottom:15px; text-align:center;">
-                ⚡ Energía: <b>${state.energy}/100</b>
-            </div>
-            <div style="text-align:center; margin-bottom:20px;">
-                <div style="font-size:3rem;">${destInfo.icon}</div>
-                <p style="color:#718096;">${destInfo.description}</p>
-            </div>
-            
-            <h4 style="margin-bottom:10px; font-weight:bold;">Actividades Disponibles:</h4>
-            ${Object.entries(resources).map(([key, res]) => {
-                const activityId = `${destInfo.key}_${key}`;
-                const inProgress = state.travelActivities[activityId];
-                const timer = getActivityTimer(destInfo.key, key);
-                const isReady = timer === '✨ LISTO';
-                
-                return `
-                    <div class="shop-item ${state.energy < res.cost && !inProgress ? 'disabled' : ''}" 
-                         style="background:${isReady ? '#f0fff4' : '#ffffff'};"
-                         onclick="${inProgress ? (isReady ? `collectTravelResource('${destInfo.key}', '${key}')` : '') : `startTravelActivity('${destInfo.key}', '${key}')`}">
-                        <div style="font-size:2rem;">${res.emoji}</div>
-                        <div style="flex:1;">
-                            <b>${res.name}</b><br>
-                            <small>⚡${res.cost} energía • ⏱️${res.time/60000}m</small>
-                            ${timer ? `<br><small style="color:#38a169; font-weight:bold;">${timer}</small>` : ''}
-                        </div>
-                        <div style="font-size:1.2rem;">
-                            ${inProgress ? (isReady ? '✅' : '⏳') : '▶️'}
-                        </div>
-                    </div>
-                `;
-            }).join('')}
-            
-            <button onclick="state.travelData = {destination: null, startTime: null}; state.modal = null; saveGame(); render();" 
-                    style="width:100%; background:#48bb78; color:white; padding:12px; border:none; border-radius:8px; margin-top:20px; cursor:pointer; font-weight:bold;">
-                🏠 Volver a la Granja
-            </button>
-        `;
-    } else if (travelStatus === 'traveling') {
-        const remaining = 30 * 60 * 1000 - (Date.now() - state.travelData.startTime);
-        const minutes = Math.floor(remaining / 60000);
-        const seconds = Math.floor((remaining % 60000) / 1000);
-        
-        content = `
-            <h3 class="modal-title">🚶 Viajando...</h3>
-            <div style="text-align:center; padding:20px;">
-                <div style="font-size:3rem; margin-bottom:20px;">⏳</div>
-                <p>Llegas a <b>${state.travelData.destination}</b> en:</p>
-                <div style="font-size:2rem; font-weight:bold; color:#48bb78; margin:20px 0;">
-                    ${minutes}:${seconds.toString().padStart(2, '0')}
-                </div>
-                <small style="color:#718096;">Puedes cerrar el juego y volver después</small>
-            </div>
-        `;
-    } else {
+    else if (state.modal === 'map') {
         content = `
             <h3 class="modal-title">🗺️ Mapa Mundial</h3>
             <div style="background:#fef5e7; padding:10px; border-radius:8px; margin-bottom:15px; text-align:center;">
@@ -1211,7 +1300,6 @@ else if (state.modal === 'map') {
             </div>
         `;
     }
-}
     else if (state.modal === 'quests') {
         content = `
             <h3 class="modal-title">📜 Misiones Diarias</h3>
@@ -1350,12 +1438,3 @@ window.fastForward = function(hours = 1) {
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
