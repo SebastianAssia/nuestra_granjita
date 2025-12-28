@@ -381,6 +381,17 @@ async function loginUser() {
         for (let i = 1; i < 8; i++) state.plots.push({ id: i, unlocked: false, crop: null, plantedAt: null, isWatered: false, lastWatered: null });
         for (let i = 1; i < 4; i++) state.pens.push({ id: i, unlocked: false, animal: null, lastProduced: null });
 
+function startTravel(destination) {
+    state.travelData = {
+        destination: destination,
+        startTime: Date.now()
+    };
+    state.modal = null;
+    showNotification(`🚶 Viajando a ${destination}... Llegarás en 30 minutos.`);
+    saveGame();
+    render();
+}
+        
         // --- UTILIDADES ---
         function getUpgradeMultiplier(id, defaultValue = 1) {
             const upgrade = [...HOUSE_UPGRADES, ...HOUSE_COSMETICS].find(u => u.id === id);
@@ -744,30 +755,10 @@ function waterCrop(plotId) {
             showNotification(`💵 Vendiste todo por $${total}`);
             checkAchievements(); saveGame(); render();
         }
-
-        function startTravel(destination) {
-            function checkTravelStatus() {
-    if (!state.travelData.destination) return null;
-    
-    const TRAVEL_TIME = 30 * 60 * 1000; // 30 minutos
-    const elapsed = Date.now() - state.travelData.startTime;
-    
-    if (elapsed >= TRAVEL_TIME) {
-        return 'arrived'; // Ya llegó
-    } else {
-        return 'traveling'; // Aún viajando
-    }
-}
-    state.travelData = {
         destination: destination,
         startTime: Date.now()
     };
 
-        else if (state.modal === 'map') {
-    const travelStatus = checkTravelStatus();
-    
-    if (travelStatus === 'arrived') {
-        // Pantalla del destino al que llegaste
         content = `
             <h3 class="modal-title">📍 ${state.travelData.destination}</h3>
             <div style="text-align:center; padding:20px;">
@@ -943,6 +934,19 @@ function waterCrop(plotId) {
         function openModal(t, id) { state.modal = t; state.selectedCell = id; render(); }
         function closeModal() { state.modal = null; render(); }
 
+        function checkTravelStatus() {
+    if (!state.travelData.destination) return null;
+    
+    const TRAVEL_TIME = 30 * 60 * 1000; // 30 minutos
+    const elapsed = Date.now() - state.travelData.startTime;
+    
+    if (elapsed >= TRAVEL_TIME) {
+        return 'arrived'; // Ya llegó
+    } else {
+        return 'traveling'; // Aún viajando
+    }
+}
+
             function render() {
     const app = document.getElementById('app');
     
@@ -964,75 +968,6 @@ function waterCrop(plotId) {
         </div>
         <div style="margin-top:70px; padding:20px; padding-bottom:100px; display:flex; flex-direction:column; align-items:center; gap:25px; min-height:calc(100vh - 70px);">
     `;
-
-    // --- Aquí va tu código del mapa ---
-    if (state.modal === 'map') {
-        const travelStatus = checkTravelStatus();
-        
-        if (travelStatus === 'arrived') {
-            // Pantalla del destino al que llegaste
-            html += `
-                <h3 class="modal-title">📍 ${state.travelData.destination}</h3>
-                <div style="text-align:center; padding:20px;">
-                    <div style="font-size:4rem; margin-bottom:20px;">
-                        ${state.travelData.destination === 'Montaña' ? '⛰️' : 
-                          state.travelData.destination === 'Bosque' ? '🌲' : 
-                          state.travelData.destination === 'Playa' ? '🏖️' : '🏘️'}
-                    </div>
-                    <p>¡Has llegado a ${state.travelData.destination}!</p>
-                    <button onclick="state.travelData = {destination: null, startTime: null}; state.modal = null; saveGame(); render();" 
-                            style="background:#48bb78; color:white; padding:10px 20px; border:none; border-radius:8px; margin-top:20px; cursor:pointer;">
-                        🏠 Volver a la Granja
-                    </button>
-                </div>
-            `;
-        } else if (travelStatus === 'traveling') {
-            // Pantalla mientras viajas
-            const remaining = 30 * 60 * 1000 - (Date.now() - state.travelData.startTime);
-            const minutes = Math.floor(remaining / 60000);
-            const seconds = Math.floor((remaining % 60000) / 1000);
-            
-            html += `
-                <h3 class="modal-title">🚶 Viajando...</h3>
-                <div style="text-align:center; padding:20px;">
-                    <div style="font-size:3rem; margin-bottom:20px;">⏳</div>
-                    <p>Llegas a <b>${state.travelData.destination}</b> en:</p>
-                    <div style="font-size:2rem; font-weight:bold; color:#48bb78; margin:20px 0;">
-                        ${minutes}:${seconds.toString().padStart(2, '0')}
-                    </div>
-                    <small style="color:#718096;">Puedes cerrar el juego y volver después</small>
-                </div>
-            `;
-        } else {
-            // Mapa normal
-            html += `
-                <h3 class="modal-title">🗺️ Mapa Mundial</h3>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-top:20px;">
-                    <div class="shop-item" style="flex-direction:column; padding:20px; text-align:center;" onclick="startTravel('Montaña')">
-                        <div style="font-size:3rem;">⛰️</div>
-                        <div style="font-weight:bold; margin-top:10px;">Montaña</div>
-                        <small style="color:#718096;">Minería y piedras</small>
-                    </div>
-                    <div class="shop-item" style="flex-direction:column; padding:20px; text-align:center;" onclick="startTravel('Bosque')">
-                        <div style="font-size:3rem;">🌲</div>
-                        <div style="font-weight:bold; margin-top:10px;">Bosque</div>
-                        <small style="color:#718096;">Madera y caza</small>
-                    </div>
-                    <div class="shop-item" style="flex-direction:column; padding:20px; text-align:center;" onclick="startTravel('Playa')">
-                        <div style="font-size:3rem;">🏖️</div>
-                        <div style="font-weight:bold; margin-top:10px;">Playa</div>
-                        <small style="color:#718096;">Pesca y conchas</small>
-                    </div>
-                    <div class="shop-item" style="flex-direction:column; padding:20px; text-align:center;" onclick="startTravel('Pueblo')">
-                        <div style="font-size:3rem;">🏘️</div>
-                        <div style="font-weight:bold; margin-top:10px;">Pueblo</div>
-                        <small style="color:#718096;">Comercio y NPCs</small>
-                    </div>
-                </div>
-            `;
-        }
-    }
-
     // El resto del código de la función render sigue aquí...
     
     app.innerHTML = html;
@@ -1276,6 +1211,7 @@ window.godMode = function() {
     </script>
 </body>
 </html>
+
 
 
 
