@@ -1084,33 +1084,71 @@ else if (state.modal === 'house') {
     `;
 }
 else if (state.modal === 'map') {
-    content = `
-        <h3 class="modal-title">🗺️ Mapa Mundial</h3>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-top:20px;">
-            <div class="shop-item" style="flex-direction:column; padding:20px; text-align:center;" onclick="startTravel('Montaña')">
-                <div style="font-size:3rem;">⛰️</div>
-                <div style="font-weight:bold; margin-top:10px;">Montaña</div>
-                <small style="color:#718096;">Minería y piedras</small>
+    const travelStatus = checkTravelStatus();
+    
+    if (travelStatus === 'arrived') {
+        // Pantalla del destino al que llegaste
+        content = `
+            <h3 class="modal-title">📍 ${state.travelData.destination}</h3>
+            <div style="text-align:center; padding:20px;">
+                <div style="font-size:4rem; margin-bottom:20px;">
+                    ${state.travelData.destination === 'Montaña' ? '⛰️' : 
+                      state.travelData.destination === 'Bosque' ? '🌲' : 
+                      state.travelData.destination === 'Playa' ? '🏖️' : '🏘️'}
+                </div>
+                <p>¡Has llegado a ${state.travelData.destination}!</p>
+                <button onclick="state.travelData = {destination: null, startTime: null}; state.modal = null; saveGame(); render();" 
+                        style="background:#48bb78; color:white; padding:10px 20px; border:none; border-radius:8px; margin-top:20px; cursor:pointer;">
+                    🏠 Volver a la Granja
+                </button>
             </div>
-            <div class="shop-item" style="flex-direction:column; padding:20px; text-align:center;" onclick="startTravel('Bosque')">
-                <div style="font-size:3rem;">🌲</div>
-                <div style="font-weight:bold; margin-top:10px;">Bosque</div>
-                <small style="color:#718096;">Madera y caza</small>
+        `;
+    } else if (travelStatus === 'traveling') {
+        // Pantalla mientras viajas
+        const remaining = 30 * 60 * 1000 - (Date.now() - state.travelData.startTime);
+        const minutes = Math.floor(remaining / 60000);
+        const seconds = Math.floor((remaining % 60000) / 1000);
+        
+        content = `
+            <h3 class="modal-title">🚶 Viajando...</h3>
+            <div style="text-align:center; padding:20px;">
+                <div style="font-size:3rem; margin-bottom:20px;">⏳</div>
+                <p>Llegas a <b>${state.travelData.destination}</b> en:</p>
+                <div style="font-size:2rem; font-weight:bold; color:#48bb78; margin:20px 0;">
+                    ${minutes}:${seconds.toString().padStart(2, '0')}
+                </div>
+                <small style="color:#718096;">Puedes cerrar el juego y volver después</small>
             </div>
-            <div class="shop-item" style="flex-direction:column; padding:20px; text-align:center;" onclick="startTravel('Playa')">
-                <div style="font-size:3rem;">🏖️</div>
-                <div style="font-weight:bold; margin-top:10px;">Playa</div>
-                <small style="color:#718096;">Pesca y conchas</small>
+        `;
+    } else {
+        // Mapa normal
+        content = `
+            <h3 class="modal-title">🗺️ Mapa Mundial</h3>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-top:20px;">
+                <div class="shop-item" style="flex-direction:column; padding:20px; text-align:center;" onclick="startTravel('Montaña')">
+                    <div style="font-size:3rem;">⛰️</div>
+                    <div style="font-weight:bold; margin-top:10px;">Montaña</div>
+                    <small style="color:#718096;">Minería y piedras</small>
+                </div>
+                <div class="shop-item" style="flex-direction:column; padding:20px; text-align:center;" onclick="startTravel('Bosque')">
+                    <div style="font-size:3rem;">🌲</div>
+                    <div style="font-weight:bold; margin-top:10px;">Bosque</div>
+                    <small style="color:#718096;">Madera y caza</small>
+                </div>
+                <div class="shop-item" style="flex-direction:column; padding:20px; text-align:center;" onclick="startTravel('Playa')">
+                    <div style="font-size:3rem;">🏖️</div>
+                    <div style="font-weight:bold; margin-top:10px;">Playa</div>
+                    <small style="color:#718096;">Pesca y conchas</small>
+                </div>
+                <div class="shop-item" style="flex-direction:column; padding:20px; text-align:center;" onclick="startTravel('Pueblo')">
+                    <div style="font-size:3rem;">🏘️</div>
+                    <div style="font-weight:bold; margin-top:10px;">Pueblo</div>
+                    <small style="color:#718096;">Comercio y NPCs</small>
+                </div>
             </div>
-            <div class="shop-item" style="flex-direction:column; padding:20px; text-align:center;" onclick="startTravel('Pueblo')">
-                <div style="font-size:3rem;">🏘️</div>
-                <div style="font-weight:bold; margin-top:10px;">Pueblo</div>
-                <small style="color:#718096;">Comercio y NPCs</small>
-            </div>
-        </div>
-    `;
+        `;
+    }
 }
-
 if (state.modal) {
     html += `
         <div class="modal" onclick="closeModal()">
@@ -1166,6 +1204,7 @@ window.godMode = function() {
     </script>
 </body>
 </html>
+
 
 
 
