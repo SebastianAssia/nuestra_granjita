@@ -746,6 +746,18 @@ function waterCrop(plotId) {
         }
 
         function startTravel(destination) {
+            function checkTravelStatus() {
+    if (!state.travelData.destination) return null;
+    
+    const TRAVEL_TIME = 30 * 60 * 1000; // 30 minutos
+    const elapsed = Date.now() - state.travelData.startTime;
+    
+    if (elapsed >= TRAVEL_TIME) {
+        return 'arrived'; // Ya llegó
+    } else {
+        return 'traveling'; // Aún viajando
+    }
+}
     state.travelData = {
         destination: destination,
         startTime: Date.now()
@@ -1154,6 +1166,7 @@ window.godMode = function() {
     </script>
 </body>
 </html>
+
 
 
 
