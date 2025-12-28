@@ -1315,15 +1315,34 @@ window.godMode = function() {
     saveGame();
     render();
 };
-    window.fastForward = function(hours = 1) {
+window.fastForward = function(hours = 1) {
     const ms = hours * 60 * 60 * 1000;
+    
+    // Cultivos
     state.plots.forEach(p => {
         if (p.plantedAt) p.plantedAt -= ms;
-        if (p.lastWatered) p.lastWatered -= ms;  // <-- AGREGA ESTO
+        if (p.lastWatered) p.lastWatered -= ms;
     });
+    
+    // Animales
     state.pens.forEach(p => {
         if (p.lastProduced) p.lastProduced -= ms;
     });
+    
+    // Viaje
+    if (state.travelData.startTime) {
+        state.travelData.startTime -= ms;
+    }
+    
+    // Actividades de viaje
+    Object.keys(state.travelActivities).forEach(activityId => {
+        state.travelActivities[activityId] -= ms;
+    });
+    
+    // Energía
+    state.lastEnergyUpdate -= ms;
+    updateEnergy();
+    
     showNotification(`⏩ Avanzado ${hours}h en el tiempo`);
     saveGame();
     render();
@@ -1331,6 +1350,7 @@ window.godMode = function() {
     </script>
 </body>
 </html>
+
 
 
 
