@@ -1097,8 +1097,6 @@ function petAnimal(penId) {
     saveGame();
     render();
 }
-function render() {
-    const app = document.getElementById('app');
         function renderTravelingScreen() {
     const app = document.getElementById('app');
     const remaining = 30 * 60 * 1000 - (Date.now() - state.travelData.startTime);
@@ -1571,5 +1569,6 @@ window.fastForward = function(hours = 1) {
     </script>
 </body>
 </html>
+
 
 
