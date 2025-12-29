@@ -1097,7 +1097,29 @@ function petAnimal(penId) {
     saveGame();
     render();
 }
-        function renderTravelingScreen() {
+function render() {
+    updateEnergy();
+    updateAnimalHappiness();
+    
+    const travelStatus = checkTravelStatus();
+    
+    // Si estás viajando, mostrar pantalla de viaje
+    if (travelStatus === 'traveling') {
+        renderTravelingScreen();
+        return;
+    }
+    
+    // Si llegaste a un destino, mostrar pantalla del destino
+    if (travelStatus === 'arrived') {
+        renderDestinationScreen();
+        return;
+    }
+    
+    // Si estás en la granja, mostrar pantalla normal
+    renderFarmScreen();
+}
+
+function renderTravelingScreen() {
     const app = document.getElementById('app');
     const remaining = 30 * 60 * 1000 - (Date.now() - state.travelData.startTime);
     const minutes = Math.floor(remaining / 60000);
@@ -1569,6 +1591,7 @@ window.fastForward = function(hours = 1) {
     </script>
 </body>
 </html>
+
 
 
 
