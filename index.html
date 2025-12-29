@@ -1010,13 +1010,7 @@ function getActivityTimer(destinationKey, resourceKey) {
     
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
-        function getActivityTimer(destinationKey, resourceKey) {
-    // ... código existente ...
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-}
-
 // AQUÍ EMPIEZA EL PASO 3 - PEGA TODO EL CÓDIGO DE LAS FUNCIONES DE FELICIDAD:
-
 function updateAnimalHappiness() {
     const HOUR = 60 * 60 * 1000;
     const now = Date.now();
@@ -1103,53 +1097,8 @@ function petAnimal(penId) {
     saveGame();
     render();
 }
-
 function render() {
     const app = document.getElementById('app');
-    // ... resto del código
-
-        function render() {
-    const app = document.getElementById('app');
-    updateEnergy();
-    
-    const travelStatus = checkTravelStatus();
-    
-    // Si estás viajando, mostrar pantalla de viaje
-    if (travelStatus === 'traveling') {
-        renderTravelingScreen();
-        return;
-    }
-    
-    // Si llegaste a un destino, mostrar pantalla del destino
-    if (travelStatus === 'arrived') {
-        renderDestinationScreen();
-        return;
-    }
-    
-    // Si estás en la granja, mostrar pantalla normal
-    renderFarmScreen();
-}
-function render() {
-    const app = document.getElementById('app');
-    updateEnergy();
-    
-    const travelStatus = checkTravelStatus();
-    
-    // Si estás viajando, mostrar pantalla de viaje
-    if (travelStatus === 'traveling') {
-        renderTravelingScreen();
-        return;
-    }
-    
-    // Si llegaste a un destino, mostrar pantalla del destino
-    if (travelStatus === 'arrived') {
-        renderDestinationScreen();
-        return;
-    }
-    
-    // Si estás en la granja, mostrar pantalla normal
-    renderFarmScreen();
-}
         function renderTravelingScreen() {
     const app = document.getElementById('app');
     const remaining = 30 * 60 * 1000 - (Date.now() - state.travelData.startTime);
@@ -1429,8 +1378,6 @@ function renderFarmScreen() {
         `;
     }
     else if (state.modal === 'upgrades') {
-        // ... resto de modales ...
-    else if (state.modal === 'upgrades') {
         content =
             `<h3 style="margin-bottom:10px;">🏠 Casa – Mejoras Permanentes</h3>` +
             HOUSE_UPGRADES.map(u => `
@@ -1624,4 +1571,5 @@ window.fastForward = function(hours = 1) {
     </script>
 </body>
 </html>
+
 
