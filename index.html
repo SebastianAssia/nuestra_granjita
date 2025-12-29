@@ -397,7 +397,7 @@ let state = {
     lastEnergyUpdate: Date.now(),
     travelActivities: {},
     plots: [ { id: 0, unlocked: true, crop: null, plantedAt: null, isWatered: false, lastWatered: null } ],
-            pens: [ { id: 0, unlocked: true, animal: null, lastProduced: null } ],
+            pens: [ { id: 0, unlocked: true, animal: null, lastProduced: null, happiness: 100, lastFed: null, lastPetted: null } ],
             inventory: {},
             modal: null,
             selectedCell: null,
@@ -412,8 +412,15 @@ let state = {
         };
 
         for (let i = 1; i < 8; i++) state.plots.push({ id: i, unlocked: false, crop: null, plantedAt: null, isWatered: false, lastWatered: null });
-        for (let i = 1; i < 4; i++) state.pens.push({ id: i, unlocked: false, animal: null, lastProduced: null });
-
+        for (let i = 1; i < 4; i++) state.pens.push({ 
+    id: i, 
+    unlocked: false, 
+    animal: null, 
+    lastProduced: null,
+    happiness: 100,
+    lastFed: null,
+    lastPetted: null
+});
 function startTravel(destination) {
     state.travelData = {
         destination: destination,
@@ -736,16 +743,30 @@ function waterCrop(plotId) {
                 if (state.inventory[consumedKey] <= 0) delete state.inventory[consumedKey];
             }
             
-            const itemKey = `${animal.produces} ${animal.productName}`;
-            state.inventory[itemKey] = (state.inventory[itemKey] || 0) + 1;
+            // La felicidad afecta la cantidad de productos
+    let quantity = 1;
+    if (pen.happiness >= 80) {
+        quantity = Math.random() < 0.3 ? 2 : 1; // 30% chance de doble producto
+    } else if (pen.happiness < 50) {
+        quantity = Math.random() < 0.5 ? 0 : 1; // 50% chance de no producir nada
+    }
+    
+    if (quantity > 0) {
+        const itemKey = `${animal.produces} ${animal.productName}`;
+        state.inventory[itemKey] = (state.inventory[itemKey] || 0) + quantity;
+        showNotification(`${quantity > 1 ? '✨✨ ' : ''}Recogiste ${quantity} ${animal.productName}${quantity > 1 ? ' (Feliz!)' : ''}`);
+    } else {
+        showNotification(`😢 ${animal.name} está muy triste y no produjo nada...`, true);
+    }
+    
+    // Elimina la línea de showNotification que estaba antes
             pen.lastProduced = Date.now();
             
             state.globalCounters.collections++;
             state.globalCounters.collectionsTotal++;
             checkQuests('collect', ANIMAL_PRODUCT_EMOJIS[animal.produces], 1);
             checkQuests('collect_total', 'any', 1);
-
-            showNotification(`Recogiste 1 ${animal.productName}`);
+            
             saveGame(); render();
         }
 
@@ -989,6 +1010,103 @@ function getActivityTimer(destinationKey, resourceKey) {
     
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
+        function getActivityTimer(destinationKey, resourceKey) {
+    // ... código existente ...
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
+// AQUÍ EMPIEZA EL PASO 3 - PEGA TODO EL CÓDIGO DE LAS FUNCIONES DE FELICIDAD:
+
+function updateAnimalHappiness() {
+    const HOUR = 60 * 60 * 1000;
+    const now = Date.now();
+    
+    state.pens.forEach(pen => {
+        if (!pen.animal) return;
+        
+        // La felicidad baja 5 puntos por hora sin alimentar
+        if (pen.lastFed) {
+            const hoursSinceFed = (now - pen.lastFed) / HOUR;
+            if (hoursSinceFed > 1) {
+                const happinessLoss = Math.floor(hoursSinceFed * 5);
+                pen.happiness = Math.max(0, pen.happiness - happinessLoss);
+            }
+        } else {
+            // Si nunca fue alimentado, baja más rápido
+            pen.happiness = Math.max(0, pen.happiness - 10);
+        }
+    });
+}
+
+function getHappinessEmoji(happiness) {
+    if (happiness >= 80) return '😊';
+    if (happiness >= 50) return '😐';
+    if (happiness >= 20) return '😟';
+    return '😢';
+}
+
+function getHappinessColor(happiness) {
+    if (happiness >= 80) return '#48bb78';
+    if (happiness >= 50) return '#f6ad55';
+    if (happiness >= 20) return '#ed8936';
+    return '#e53e3e';
+}
+
+function feedAnimal(penId) {
+    const pen = state.pens.find(p => p.id === penId);
+    if (!pen.animal) return;
+    
+    const animal = ANIMALS[pen.animal];
+    const consumedCrop = Object.values(CROPS).find(c => c.name === animal.consumes);
+    const consumedKey = consumedCrop ? `${consumedCrop.emoji} ${consumedCrop.name}` : null;
+    
+    if (consumedKey && (state.inventory[consumedKey] || 0) < animal.consumptionAmount) {
+        showNotification(`❌ Falta ${animal.consumptionAmount} ${animal.consumes} para alimentar.`, true);
+        return;
+    }
+    
+    // Consumir comida
+    if (consumedKey) {
+        state.inventory[consumedKey] -= animal.consumptionAmount;
+        if (state.inventory[consumedKey] <= 0) delete state.inventory[consumedKey];
+    }
+    
+    // Aumentar felicidad
+    pen.happiness = Math.min(100, pen.happiness + 20);
+    pen.lastFed = Date.now();
+    
+    showNotification(`🍽️ ${animal.name} alimentado! +20 felicidad`);
+    saveGame();
+    render();
+}
+
+function petAnimal(penId) {
+    const pen = state.pens.find(p => p.id === penId);
+    if (!pen.animal) return;
+    
+    const now = Date.now();
+    const HOUR = 60 * 60 * 1000;
+    
+    // Solo puedes acariciar cada 2 horas
+    if (pen.lastPetted && (now - pen.lastPetted) < 2 * HOUR) {
+        const remaining = 2 * HOUR - (now - pen.lastPetted);
+        const minutes = Math.floor(remaining / 60000);
+        showNotification(`⏰ Espera ${minutes} minutos para acariciar de nuevo`, true);
+        return;
+    }
+    
+    pen.happiness = Math.min(100, pen.happiness + 10);
+    pen.lastPetted = now;
+    
+    const animal = ANIMALS[pen.animal];
+    showNotification(`💚 Acariciaste a ${animal.name}! +10 felicidad`);
+    saveGame();
+    render();
+}
+
+function render() {
+    const app = document.getElementById('app');
+    // ... resto del código
 
         function render() {
     const app = document.getElementById('app');
@@ -1183,25 +1301,33 @@ function renderFarmScreen() {
     html += `</div>`;
 
     // Corrales
+// Corrales
     html += `<div class="area-label" style="margin-top:20px;">🐔 Animales</div>
              <div style="display:grid; grid-template-columns:repeat(4, 80px); gap:10px;">`;
     state.pens.forEach(p => {
+        updateAnimalHappiness(); // Actualizar felicidad
+        
         if (!p.unlocked) {
             html += `<div class="grid-cell locked" onclick="unlockLand('pen', ${p.id})">🔒<div class="timer">$${PEN_COSTS[p.id]}</div></div>`;
         } else if (!p.animal) {
             html += `<div class="grid-cell empty" onclick="openModal('animal', ${p.id})">➕</div>`;
         } else {
             const ready = (Date.now() - p.lastProduced) >= ANIMALS[p.animal].time * getUpgradeMultiplier('efficiency_animal');
-            html += `<div class="grid-cell ${ready ? 'ready' : 'growing'}" onclick="collectProduct(${p.id})">
+            const happinessEmoji = getHappinessEmoji(p.happiness);
+            
+            html += `<div class="grid-cell ${ready ? 'ready' : 'growing'}" 
+                          onclick="collectProduct(${p.id})"
+                          oncontextmenu="event.preventDefault(); openModal('animal-care', ${p.id}); return false;"
+                          style="position:relative;">
                         ${ANIMALS[p.animal].emoji}
-                        <div class="timer">${getAnimalTimer(p.lastProduced, ANIMALS[p.animal].time)}</div>
+                        <div style="position:absolute; top:5px; right:5px; font-size:1rem;">${happinessEmoji}</div>
+                        <div class="timer" style="background:${getHappinessColor(p.happiness)}40;">${getAnimalTimer(p.lastProduced, ANIMALS[p.animal].time)}</div>
                      </div>`;
         }
     });
     html += `</div>`;
     
     html += `</div>`; // End container
-
     // Casa
     html += `
         <div class="house-building" onclick="openModal('house')">
@@ -1244,6 +1370,66 @@ function renderFarmScreen() {
             </div>
         `).join('');
     }
+        else if (state.modal === 'animal') {
+        content = Object.entries(ANIMALS).map(([k,a]) => `
+            <div class="shop-item" onclick="buyAnimal(${state.selectedCell}, '${k}')">
+                <div style="font-size:2rem;">${a.emoji}</div>
+                <div style="flex:1;">
+                    <b>${a.name}</b><br>
+                    <small>Comer: ${a.consumes} 💰$${a.cost}</small>
+                </div>
+            </div>
+        `).join('');
+    }
+    else if (state.modal === 'animal-care') {
+        const pen = state.pens.find(p => p.id === state.selectedCell);
+        const animal = ANIMALS[pen.animal];
+        
+        content = `
+            <h3 class="modal-title">💚 Cuidar ${animal.name}</h3>
+            <div style="text-align:center; margin:20px 0;">
+                <div style="font-size:4rem;">${animal.emoji}</div>
+                <div style="font-size:2rem; margin:10px 0;">${getHappinessEmoji(pen.happiness)}</div>
+                <div style="margin:10px 0;">
+                    <div style="background:#e2e8f0; border-radius:20px; height:20px; overflow:hidden;">
+                        <div style="background:${getHappinessColor(pen.happiness)}; width:${pen.happiness}%; height:100%; transition:width 0.3s;"></div>
+                    </div>
+                    <div style="margin-top:5px; font-weight:bold; color:${getHappinessColor(pen.happiness)};">
+                        Felicidad: ${pen.happiness}/100
+                    </div>
+                </div>
+            </div>
+            
+            <div class="shop-item" onclick="feedAnimal(${pen.id})">
+                <div style="font-size:2rem;">🍽️</div>
+                <div style="flex:1;">
+                    <b>Alimentar</b><br>
+                    <small>Necesita: ${animal.consumptionAmount} ${animal.consumes}</small><br>
+                    <small style="color:#48bb78;">+20 Felicidad</small>
+                </div>
+            </div>
+            
+            <div class="shop-item" onclick="petAnimal(${pen.id})">
+                <div style="font-size:2rem;">💚</div>
+                <div style="flex:1;">
+                    <b>Acariciar</b><br>
+                    <small>Cada 2 horas</small><br>
+                    <small style="color:#48bb78;">+10 Felicidad</small>
+                </div>
+            </div>
+            
+            <div style="margin-top:20px; padding:15px; background:#fef5e7; border-radius:8px;">
+                <b>💡 Consejos:</b>
+                <ul style="margin:10px 0; padding-left:20px; line-height:1.6;">
+                    <li>Felicidad ≥80: 30% chance de doble producto</li>
+                    <li>Felicidad <50: 50% chance de no producir</li>
+                    <li>La felicidad baja 5 puntos por hora sin alimentar</li>
+                </ul>
+            </div>
+        `;
+    }
+    else if (state.modal === 'upgrades') {
+        // ... resto de modales ...
     else if (state.modal === 'upgrades') {
         content =
             `<h3 style="margin-bottom:10px;">🏠 Casa – Mejoras Permanentes</h3>` +
@@ -1438,3 +1624,4 @@ window.fastForward = function(hours = 1) {
     </script>
 </body>
 </html>
+
