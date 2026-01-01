@@ -1056,27 +1056,6 @@
                 }, duration);
             }
 
-    // Detectar y manejar el magic link cuando la página carga
-    (async function initAuth() {
-        try {
-            const { data, error } = await supabaseClient.auth.getSession();
-            if (error) throw error;
-            
-            if (data.session) {
-                currentUser = data.session.user;
-                showNotification("✅ ¡Sesión iniciada correctamente!");
-                
-                // Limpiar la URL de los parámetros de autenticación
-                if (window.location.hash.includes('access_token')) {
-                    window.history.replaceState({}, document.title, window.location.pathname);
-                }
-            }
-        } catch (err) {
-            console.error('Error al iniciar sesión:', err);
-            showNotification('Error al verificar la sesión', true);
-        }
-    })();
-
             function checkAchievements() { 
         state.achievements.forEach(ach => {
             if (ach.completed) return;
@@ -2283,8 +2262,48 @@
         showNotification('Error de promesa no controlado: ' + (e.reason?.message || e.reason || e), true);
     });
 
+    // Detectar y manejar el magic link cuando la página carga
+    (async function initAuth() {
+        try {
+            const { data, error } = await supabaseClient.auth.getSession();
+            if (error) throw error;
+
+            if (data.session) {
+                currentUser = data.session.user;
+                showNotification("✅ ¡Sesión iniciada correctamente!");
+
+                // Limpiar la URL de los parámetros de autenticación
+                if (window.location.hash.includes('access_token')) {
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }
+
+                // Cargar granjas del usuario
+                try {
+                    await ensurePersonalFarm();
+                    await listUserFarms();
+                    const saved = localStorage.getItem('selectedFarm');
+                    if (saved) {
+                        try { 
+                            const obj = JSON.parse(saved); 
+                            if (obj && obj.id) switchToFarmById(obj.id); 
+                        } catch(e) { 
+                            console.warn('restoring selectedFarm failed', e); 
+                        }
+                    } else {
+                        if (state.farmsList && state.farmsList.length) switchToFarm(state.farmsList[0]);
+                    }
+                } catch(e) { 
+                    console.warn('farm setup after auth failed', e); 
+                }
+            }
+        } catch (err) {
+            console.error('Error al iniciar sesión:', err);
+            showNotification('Error al verificar la sesión', true);
+        }
+    })();
+
     // Inicializar el juego
-    generateNewQuests(); // <-- ESTO FALTABA
+    generateNewQuests();
     loadGame().catch(e => console.warn('loadGame failed', e));
     render();
     // Mostrar la pantalla de entrada al cargar
