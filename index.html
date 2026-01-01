@@ -6,14 +6,26 @@
     <title>🌾 Granja Tycoon V1.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        :root {
+            --bg-gradient-start: #9ae6b4;
+            --bg-gradient-end: #68d391;
+            --primary: #2f855a;
+            --accent: #FFD166;
+            --success: #38a169;
+            --error: #c53030;
+            --hud-text: #ffffff;
+            --panel-bg: rgba(255,255,255,0.9);
+            --btn-shadow: 0 6px 18px rgba(45, 87, 44, 0.25);
+            --radius: 8px;
+        }
         body {
     margin: 0;
     overflow-y: auto;  /* Cambia de hidden a auto */
     overflow-x: hidden; /* Solo horizontal bloqueado */
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(180deg, #9ae6b4 0%, #68d391 100%);
+    background: linear-gradient(180deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
     min-height: 100vh;
-}
+} 
 body::before {
     content: '';
     position: fixed;
@@ -245,27 +257,134 @@ body::before {
         }
 
         .toast {
-            background: #38a169;
+            background: var(--success);
             color: white;
             padding: 10px 15px;
-            border-radius: 8px;
+            border-radius: var(--radius);
             margin-bottom: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.18);
             opacity: 0;
-            transition: opacity 0.3s, transform 0.3s;
-            transform: translateX(100%);
-            font-size: 0.9rem;
+            transition: opacity 300ms, transform 300ms;
+            transform: translateX(30%) scale(.98);
+            font-size: 0.95rem;
+            pointer-events: auto;
         }
 
         .toast.show {
             opacity: 1;
-            transform: translateX(0);
+            transform: translateX(0) scale(1);
+            animation: toastPop 360ms cubic-bezier(.2,.9,.2,1);
         }
+
+        .toast.toast--error {
+            background: var(--error);
+        }
+
+        @keyframes toastPop {
+            0% { transform: translateX(30%) scale(.98); opacity: 0; }
+            60% { transform: translateX(-6px) scale(1.02); opacity: 1; }
+            100% { transform: translateX(0) scale(1); }
+        }
+
+        /* INTRO - PANTALLA DE ENTRADA */
+        .intro {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(180deg,#6ee7b7 0%, #38a169 100%);
+            color: white;
+            z-index: 1200;
+        }
+        .intro-content {
+            text-align: center;
+            background: rgba(255,255,255,0.06);
+            padding: 28px 36px;
+            border-radius: 14px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.25);
+            animation: introPop 700ms cubic-bezier(.2,.9,.2,1);
+            backdrop-filter: blur(6px);
+        }
+        .farm-title { font-size: 3rem; font-weight: 900; margin-top: 8px; text-shadow: 0 6px 20px rgba(0,0,0,0.15); transform: translateY(18px); opacity: 0; animation: riseUp 700ms cubic-bezier(.2,.9,.2,1) forwards; animation-delay: 900ms; }
+        .accent { color: #FFD166; }
+        .intro-sub { margin-top: 8px; font-size: 1rem; opacity: 0.95; }
+        /* Contenedor de emojis: cada emoji es animado de izquierda a derecha */
+        .intro-emoji { display:flex; gap:12px; justify-content:center; align-items:center; margin-bottom:6px; }
+        .intro-emoji__item { font-size:2.6rem; display:inline-block; transform:translateX(-40px); opacity:0; animation: emojiSlide 700ms cubic-bezier(.2,.9,.2,1) forwards; }
+        .intro-emoji__item:nth-child(1){ animation-delay: 0ms; }
+        .intro-emoji__item:nth-child(2){ animation-delay: 150ms; }
+        .intro-emoji__item:nth-child(3){ animation-delay: 300ms; }
+        @keyframes introPop { 0% {opacity:0; transform: translateY(8px) scale(.96);} 60% {opacity:1; transform: translateY(-6px) scale(1.03);} 100% {transform: translateY(0) scale(1);} }
+        @keyframes emojiSlide { 0% { transform: translateX(-40px); opacity:0; } 100% { transform: translateX(40px); opacity:1; } }
+        @keyframes riseUp { 0% { transform: translateY(18px); opacity:0; } 100% { transform: translateY(0); opacity:1; } }
+        @keyframes float { 0% { transform: translateY(0);} 50% { transform: translateY(-10px);} 100% { transform: translateY(0);} }
+        /* Botones base */
+        .btn {
+            background: var(--primary);
+            color: white;
+            padding: 10px 18px;
+            border-radius: var(--radius);
+            border: none;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: var(--btn-shadow);
+            transition: transform .15s ease, box-shadow .15s;
+        }
+        .btn:hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgba(0,0,0,0.18); }
+        .btn:active { transform: translateY(-1px); }
+        .btn.secondary { background: #718096; }
+        /* Icon buttons en el HUD */
+        .icon-button { background: transparent; border-radius: 6px; padding: 6px; font-size: 1rem; cursor: pointer; border: none; }
+        .icon-button:hover { background: rgba(255,255,255,0.06); }
+        /* Tooltip simple usando data-tooltip */
+        .icon-button[data-tooltip] { position: relative; }
+        .icon-button[data-tooltip]:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            color: #fff;
+            padding: 6px 8px;
+            font-size: 0.85rem;
+            border-radius: 6px;
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 1200;
+            opacity: 1;
+        }
+        /* INVENTARIO - Cuadrícula */
+        .inventory-grid { display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; }
+        .inventory-slot { background: #fff; border:2px solid #e2e8f0; padding:8px; border-radius:8px; min-height:64px; display:flex; flex-direction:column; justify-content:center; align-items:center; transition: transform .2s ease; }
+        .inventory-slot.empty { background: transparent; border-style:dashed; color:#a0aec0; }
+        .inventory-slot .qty { font-weight:700; color:#2d3748; margin-top:6px; }
+        .inventory-slot.pulse { animation: slotPulse 700ms cubic-bezier(.2,.9,.2,1); transform-origin: center; }
+        @keyframes slotPulse { 0% { transform: scale(1); } 40% { transform: scale(1.08); } 100% { transform: scale(1); } }
+        @media (max-width:480px) { .farm-title{ font-size:2rem;} .intro-content{ padding:18px; } .btn{padding:8px 12px;} .inventory-slot{min-height:56px;} }
     </style>
 </head>
 <body>
     <div id="app"></div>
     <div id="notification-area"></div>
+
+    <!-- Intro Splash: pantalla de entrada animada -->
+    <div id="intro" class="intro" role="dialog" aria-modal="true" aria-labelledby="intro-title" style="display:flex;">
+        <div class="intro-content">
+            <div class="intro-emoji" aria-hidden="true">
+                <span class="intro-emoji__item">🌾</span>
+                <span class="intro-emoji__item">🐔</span>
+                <span class="intro-emoji__item">🐄</span>
+            </div>
+            <div id="intro-title" class="farm-title">Nuestra <span class="accent">Granjita</span></div>
+            <div class="intro-sub">Un lugar pequeño, grandes aventuras</div>
+            <div style="margin-top:18px; display:flex; gap:10px; justify-content:center;">
+                <button id="start-game" type="button" class="start-button btn">Iniciar</button>
+                <button id="skip-intro" type="button" class="start-button btn secondary" style="background:#718096;">Saltar</button>
+            </div>
+        </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
@@ -274,15 +393,179 @@ body::before {
         // --- CONFIGURACIÓN SUPABASE ---
 const SUPABASE_URL = 'https://paiudfeydwyiscycotbz.supabase.co'; // Tu URL
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBhaXVkZmV5ZHd5aXNjeWNvdGJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU5Nzg0NTMsImV4cCI6MjA4MTU1NDQ1M30.SvrgjXzfzPEYtF7ef1SbkOSm1LY7Wg3pWbbj0Wh9qEA';
-const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// Cliente Supabase (renombrado para mayor claridad)
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// Usuario actual (null si no hay sesión)
 let currentUser = null;
+
+// --- SISTEMA DE GRANJAS (Compartidas y personales) ---
+// Estado adicional en memoria
+state.currentFarmId = null;           // id de la granja seleccionada
+state.currentFarmName = null;
+state.farmsList = [];                // lista de granjas a las que pertenece el usuario
+
+// Helper: genera código de invitación corto
+function generateInviteCode(len = 6) {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let s = '';
+    for (let i=0;i<len;i++) s += chars[Math.floor(Math.random()*chars.length)];
+    return s;
+}
+
+// Crea una granja (intenta remoto, si falla, crea localmente como fallback)
+async function createFarm(name, isPublic = false) {
+    if (!currentUser) { showNotification('Debes iniciar sesión para crear una granja', true); return null; }
+    const invite_code = generateInviteCode();
+    try {
+        const { data, error } = await supabaseClient
+            .from('farms')
+            .insert({ name, owner_id: currentUser.id, is_public: isPublic, invite_code })
+            .select('*')
+            .single();
+        if (error) throw error;
+        // Insert membership
+        await supabaseClient.from('farm_members').insert({ farm_id: data.id, user_id: currentUser.id, role: 'owner' });
+        showNotification('Granja creada: ' + name);
+        return data;
+    } catch (e) {
+        logError('createFarm failed, using local fallback', e);
+        // fallback local-only farm (no id collision prevention)
+        const localId = 'local_' + Date.now();
+        const farm = { id: localId, name, owner_id: currentUser?.id || null, is_public: false, invite_code, state_snapshot: {}, snapshot_time: Date.now() };
+        state.farmsList.push(farm);
+        showNotification('Granja creada localmente: ' + name);
+        return farm;
+    }
+}
+
+// Unirse a una granja por código de invitación
+async function joinFarmByCode(code) {
+    if (!currentUser) { showNotification('Debes iniciar sesión para unirte', true); return null; }
+    try {
+        const { data: farm } = await supabaseClient.from('farms').select('*').eq('invite_code', code).single();
+        if (!farm) { showNotification('Código inválido', true); return null; }
+        // Añadir miembro (si no existe)
+        await supabaseClient.from('farm_members').upsert({ farm_id: farm.id, user_id: currentUser.id, role: 'member' });
+        showNotification('Te uniste a ' + farm.name);
+        return farm;
+    } catch (e) {
+        logError('joinFarmByCode failed', e);
+        showNotification('No se pudo unir a la granja', true);
+        return null;
+    }
+}
+
+// Lista de granjas a las que pertenece el usuario
+async function listUserFarms() {
+    if (!currentUser) return [];
+    try {
+        const { data } = await supabaseClient
+            .from('farm_members')
+            .select('farm_id, role, farms(id,name,owner_id,is_public,invite_code,snapshot_time,state_snapshot)')
+            .eq('user_id', currentUser.id);
+        if (!data) return [];
+        // Extraer farms
+        const farms = data.map(r => ({ id: r.farm_id, role: r.role, ...r.farms }));
+        state.farmsList = farms;
+        return farms;
+    } catch (e) { logError('listUserFarms failed', e); return []; }
+}
+
+// Asegura que el usuario tiene una granja personal (la crea si no existe)
+async function ensurePersonalFarm() {
+    if (!currentUser) return;
+    // Buscar farm donde owner_id == currentUser.id y name startsWith 'Personal -'
+    try {
+        const { data } = await supabaseClient
+            .from('farms')
+            .select('*')
+            .eq('owner_id', currentUser.id)
+            .limit(1);
+        if (data && data.length) {
+            // Usar la primera como personal
+            state.farmsList = state.farmsList.concat(data);
+            const personal = data[0];
+            // Añadir membership si no existe
+            await supabaseClient.from('farm_members').upsert({ farm_id: personal.id, user_id: currentUser.id, role: 'owner' });
+            return personal;
+        }
+    } catch(e) { logError('ensurePersonalFarm check failed', e); }
+
+    // Crear personal
+    const name = `Personal - ${currentUser.email.split('@')[0]}`;
+    const farm = await createFarm(name, false);
+    if (farm) {
+        state.farmsList.push(farm);
+        return farm;
+    }
+    return null;
+}
+
+// Cambiar a una granja (por id) — guarda en localStorage la selección
+async function switchToFarm(farm) {
+    if (!farm) return;
+    state.currentFarmId = farm.id;
+    state.currentFarmName = farm.name;
+    localStorage.setItem('selectedFarm', JSON.stringify({ id: farm.id, name: farm.name }));
+    showNotification('Cambiada a: ' + farm.name);
+    // Cargar snapshot (si existe)
+    if (farm.state_snapshot) {
+        try {
+            // Apply snapshot to state.game if desired — keep local load behavior minimal for now
+            // TODO: merge snapshot with local state carefully
+            // For now, store snapshot in memory
+            state.currentFarmSnapshot = farm.state_snapshot;
+            state.currentFarmSnapshotTime = farm.snapshot_time;
+            state.currentFarmLastActivity = farm.last_activity_at || null;
+            try { if (currentUser) await loadGame(); } catch(e){ console.warn('loadGame after switch failed', e); }
+        } catch(e) { console.warn('apply snapshot failed', e); }
+    }
+    render();
+}
+
+// Fallback local-only farm creation for offline users
+function createLocalFallbackFarm(name) {
+    const localId = 'local_' + Date.now();
+    const farm = { id: localId, name, owner_id: currentUser?.id || null, is_public: false, invite_code: generateInviteCode(), state_snapshot: {}, snapshot_time: Date.now() };
+    state.farmsList.push(farm);
+    localStorage.setItem('localFarms', JSON.stringify(state.farmsList));
+    return farm;
+}
+
+// Guardar snapshot de la granja actual (simple upsert)
+async function saveFarmSnapshot() {
+    if (!state.currentFarmId || !currentUser) return;
+    // Preparar snapshot (puedes serializar solo lo necesario)
+    const snapshot = {
+        money: state.money,
+        medals: state.medals,
+        plots: state.plots,
+        pens: state.pens,
+        inventory: state.inventory,
+        globalCounters: state.globalCounters
+    };
+    try {
+        await supabaseClient.from('farms').update({ state_snapshot: snapshot, snapshot_time: new Date().toISOString(), last_activity_at: new Date().toISOString() }).eq('id', state.currentFarmId);
+    } catch (e) { logError('saveFarmSnapshot failed', e); }
+}
+
+function switchToFarmById(id) {
+    const f = state.farmsList.find(x => x.id === id);
+    if (!f) { showNotification('Granja no encontrada', true); return; }
+    switchToFarm(f);
+}
+
+function openFarmSelector() {
+    state.modal = 'farm_selector'; render();
+}
+
 
 // --- FUNCIONES DE ACCESO ---
 async function loginUser() {
     const email = prompt("Introduce tu email para recibir un enlace de acceso:");
     if (!email) return;
-    const { error } = await _supabase.auth.signInWithOtp({ 
+    const { error } = await supabaseClient.auth.signInWithOtp({ 
         email,
         options: {
             emailRedirectTo: 'https://sebastianassia.github.io/nuestra_granjita/'
@@ -297,6 +580,9 @@ async function loginUser() {
 
         // SPOIL FACTOR: Tiempo extra antes de pudrirse (1.5 = 50% más del tiempo de crecimiento)
         const SPOIL_FACTOR = 1.5; 
+
+        // Inventario: número máximo de espacios (4x3 = 12)
+        const INVENTORY_CAP = 12;
 
         const CROPS = {
             carrot: { name: 'Zanahoria', emoji: '🥕', cost: 20, time: 30 * 60 * 1000, sell: 50 },
@@ -398,7 +684,7 @@ let state = {
     travelActivities: {},
     plots: [ { id: 0, unlocked: true, crop: null, plantedAt: null, isWatered: false, lastWatered: null } ],
             pens: [ { id: 0, unlocked: true, animal: null, lastProduced: null, happiness: 100, lastFed: null, lastPetted: null } ],
-            inventory: {},
+            inventory: new Array(INVENTORY_CAP).fill(null),
             modal: null,
             selectedCell: null,
             globalCounters: {
@@ -432,7 +718,12 @@ function startTravel(destination) {
     render();
 }
         
-        // --- UTILIDADES ---
+        // --- UTILIDADES / FUNCIONES AUXILIARES ---
+        /**
+         * Devuelve el multiplicador aplicado por las mejoras de la casa.
+         * type: 'efficiency' y 'animal_prod' reducen tiempos (factor < 1)
+         * type: 'money' aumenta el precio de venta (factor > 1)
+         */
         function getUpgradeMultiplier(id, defaultValue = 1) {
             const upgrade = [...HOUSE_UPGRADES, ...HOUSE_COSMETICS].find(u => u.id === id);
             if (state.upgrades[id] && upgrade) {
@@ -442,10 +733,24 @@ function startTravel(destination) {
             return defaultValue;
         }
 
+        // Helper centralizado para logging de errores con contexto y timestamp
+        function logError(context, err) {
+            try {
+                const ts = new Date().toISOString();
+                console.error(`[${ts}] ERROR - ${context}:`, err && err.stack ? err.stack : (err && err.message ? err.message : err));
+            } catch(e) { console.error('logging failed', e); }
+        }
+
         // Determinar estado de la parcela: 'dry', 'growing', 'ready', 'spoiled'
 
+        /**
+         * Determina el estado de una parcela según riego y tiempo desde la siembra.
+         * Devuelve uno de: 'empty', 'dry', 'growing', 'ready', 'spoiled'.
+         */
         function getPlotStatus(plot) {
     if (!plot.crop) return 'empty';
+
+
     
     // Si nunca fue regado, está seco
     if (!plot.isWatered || !plot.lastWatered) return 'dry';
@@ -471,6 +776,74 @@ function startTravel(destination) {
     return slowGrowth ? 'dry' : 'growing';
 }
 
+        // --- INVENTORY HELPERS ---
+        // Inventario es un array con espacios fijos (null = vacío)
+        function findInventorySlot(itemKey) {
+            return state.inventory.findIndex(s => s && s.item === itemKey);
+        }
+        function getInventoryQty(itemKey) {
+            const idx = findInventorySlot(itemKey);
+            return idx === -1 ? 0 : state.inventory[idx].qty;
+        }
+        function hasInventorySpaceFor(itemKey, qty = 1) {
+            // If item already stacks in a slot, it's fine
+            if (findInventorySlot(itemKey) !== -1) return true;
+            // Otherwise, there must be at least one null slot
+            return state.inventory.some(s => s === null);
+        }
+        function addToInventory(itemKey, qty = 1) {
+            const idx = findInventorySlot(itemKey);
+            if (idx !== -1) { state.inventory[idx].qty += qty; pulseInventorySlot(idx); return true; }
+            const freeIdx = state.inventory.findIndex(s => s === null);
+            if (freeIdx === -1) { showNotification('❌ Inventario lleno. Libera espacio.', true); return false; }
+            state.inventory[freeIdx] = { item: itemKey, qty };
+            pulseInventorySlot(freeIdx);
+            return true;
+        }
+        function removeFromInventory(itemKey, qty = 1) {
+            const idx = findInventorySlot(itemKey);
+            if (idx === -1) return false;
+            const slot = state.inventory[idx];
+            if (qty >= slot.qty) { state.inventory[idx] = null; return true; }
+            slot.qty -= qty; return true;
+        }
+        function sellSlot(index) {
+            const slot = state.inventory[index];
+            if (!slot) return;
+            const itemKey = slot.item;
+            const qty = slot.qty;
+            let price = 0;
+            Object.values(CROPS).forEach(c => { if(itemKey.includes(c.name)) price = c.sell; });
+            Object.values(ANIMALS).forEach(a => { if(itemKey.includes(a.productName)) price = a.sell; });
+            price = Math.round(price * getUpgradeMultiplier('sale_bonus'));
+            const total = price * qty;
+            // Visual pulse antes de limpiar la casilla
+            pulseInventorySlot(index);
+            state.money += total;
+            state.inventory[index] = null;
+            state.globalCounters.sells += qty;
+            state.globalCounters.moneyEarnedToday += total;
+            state.globalCounters.moneyEarnedTotalWeek += total;
+            checkQuests('sell', 'any', qty);
+            checkQuests('money', 'any', total);
+            checkQuests('money_total', 'any', total);
+            showNotification(`💵 Vendiste todo por $${total}`);
+            checkAchievements(); saveGame(); render();
+        }
+
+        // Pequeña animación visual para la UI del inventario
+        function pulseInventorySlot(index) {
+            try {
+                const nodes = document.querySelectorAll('.inventory-slot');
+                if (!nodes || !nodes[index]) return;
+                nodes[index].classList.add('pulse');
+                setTimeout(() => { if(nodes[index]) nodes[index].classList.remove('pulse'); }, 700);
+            } catch(e) { /* Silenciar si no existe la UI en ese momento */ }
+        }
+
+        /**
+         * Devuelve un texto legible con el tiempo restante o la etiqueta de estado de la parcela.
+         */
         function getTimeDisplay(plot) {
             const status = getPlotStatus(plot);
             if (status === 'dry') return '💧 Falta Agua';
@@ -493,6 +866,9 @@ function startTravel(destination) {
         }
         
         // Timer de animales (simple)
+        /**
+         * Devuelve un temporizador legible para la producción de animales.
+         */
         function getAnimalTimer(startTime, duration) {
             const adjustedDuration = duration * getUpgradeMultiplier('efficiency_animal');
             const elapsed = Date.now() - startTime;
@@ -504,21 +880,27 @@ function startTravel(destination) {
             return minutes > 0 ? `${minutes}m` : `${seconds}s`;
         }
 
+        /**
+         * Muestra un toast temporal en la interfaz.
+         * Si isError=true, se colorea como error.
+         */
         function showNotification(message, isError = false) {
             const area = document.getElementById('notification-area');
             if (!area) return;
             const toast = document.createElement('div');
-            toast.className = 'toast';
-            if (isError) toast.style.backgroundColor = '#c53030';
+            toast.className = 'toast' + (isError ? ' toast--error' : '');
+            toast.setAttribute('role', 'status');
+            toast.setAttribute('aria-live', 'polite');
             toast.textContent = message;
             area.appendChild(toast);
             setTimeout(() => { toast.classList.add('show'); }, 10);
+            const duration = isError ? 4500 : 2500;
             setTimeout(() => {
                 toast.classList.remove('show');
                 setTimeout(() => { if(area.contains(toast)) area.removeChild(toast); }, 300);
-            }, 3000);
+            }, duration);
         }
-        function checkAchievements() {
+        function checkAchievements() { 
     state.achievements.forEach(ach => {
         if (ach.completed) return;
         if (ach.condition(state)) {
@@ -616,6 +998,9 @@ function startTravel(destination) {
             saveGame(); render();
         }
         // --- ACCIONES DE JUEGO ---
+        /**
+         * Planta un cultivo en la parcela indicada. Verifica fondos y actualiza contadores.
+         */
         function plantCrop(plotId, cropKey) {
             const crop = CROPS[cropKey];
             if (state.money < crop.cost) { showNotification('Falta dinero', true); return; }
@@ -637,7 +1022,10 @@ function startTravel(destination) {
             showNotification(`🌱 ${crop.name} plantada. ¡Ríegala para que crezca!`);
             saveGame(); render();
         }
-function waterCrop(plotId) {
+    /**
+     * Riega un cultivo y, si es la primera vez, inicia su crecimiento.
+     */
+    function waterCrop(plotId) {
     const plot = state.plots.find(p => p.id === plotId);
     if (!plot.crop) return;
 
@@ -655,6 +1043,9 @@ function waterCrop(plotId) {
     saveGame(); render();
 }
 
+        /**
+         * Cosecha un cultivo si está listo. Maneja estados podrido/seco/creciendo.
+         */
         function harvestCrop(plotId) {
     const plot = state.plots.find(p => p.id === plotId);
     if (!plot.crop) return;
@@ -686,7 +1077,8 @@ function waterCrop(plotId) {
     // Status Ready - SOLO aquí se cosecha
     const crop = CROPS[plot.crop];
     const itemKey = `${crop.emoji} ${crop.name}`;
-    state.inventory[itemKey] = (state.inventory[itemKey] || 0) + 1;
+    // Intentar añadir al inventario; si está lleno, no cosechar y avisar
+    if (!addToInventory(itemKey, 1)) return;
     
     state.globalCounters.harvests++;
     checkQuests('harvest', crop.name, 1);
@@ -702,6 +1094,9 @@ function waterCrop(plotId) {
     render();
 }
 
+        /**
+         * Compra un animal y lo asigna a un corral.
+         */
         function buyAnimal(penId, animalKey) {
             const animal = ANIMALS[animalKey];
             if (state.money < animal.cost) { showNotification('Falta dinero', true); return; }
@@ -719,6 +1114,10 @@ function waterCrop(plotId) {
             saveGame(); render();
         }
 
+        /**
+         * Recoge el producto de un corral si ha pasado el tiempo de producción.
+         * Consume el alimento necesario del inventario cuando aplica.
+         */
         function collectProduct(penId) {
             const pen = state.pens.find(p => p.id === penId);
             const animal = ANIMALS[pen.animal];
@@ -726,10 +1125,6 @@ function waterCrop(plotId) {
             // Check food
             const consumedCrop = Object.values(CROPS).find(c => c.name === animal.consumes);
             const consumedKey = consumedCrop ? `${consumedCrop.emoji} ${consumedCrop.name}` : null;
-            if (consumedKey && (state.inventory[consumedKey] || 0) < animal.consumptionAmount) {
-                showNotification(`❌ Falta ${animal.consumptionAmount} ${animal.consumes} para comer.`, true);
-                return;
-            }
 
             const adjustedTime = animal.time * getUpgradeMultiplier('efficiency_animal');
             if (Date.now() - pen.lastProduced < adjustedTime) {
@@ -737,12 +1132,6 @@ function waterCrop(plotId) {
                 return;
             }
 
-            // Consume food & Produce
-            if (consumedKey) {
-                state.inventory[consumedKey] -= animal.consumptionAmount;
-                if (state.inventory[consumedKey] <= 0) delete state.inventory[consumedKey];
-            }
-            
             // La felicidad afecta la cantidad de productos
     let quantity = 1;
     if (pen.happiness >= 80) {
@@ -750,10 +1139,28 @@ function waterCrop(plotId) {
     } else if (pen.happiness < 50) {
         quantity = Math.random() < 0.5 ? 0 : 1; // 50% chance de no producir nada
     }
-    
+
     if (quantity > 0) {
         const itemKey = `${animal.produces} ${animal.productName}`;
-        state.inventory[itemKey] = (state.inventory[itemKey] || 0) + quantity;
+        // Verificar espacio en inventario antes de consumir comida
+        if (!hasInventorySpaceFor(itemKey, quantity)) { showNotification('❌ Inventario lleno. Libera espacio para recoger.', true); return; }
+
+        // Consumir comida
+        if (consumedKey) {
+            removeFromInventory(consumedKey, animal.consumptionAmount);
+        }
+
+        // Añadir producto
+        if (!addToInventory(itemKey, quantity)) {
+            showNotification('❌ No se pudo guardar el producto.', true);
+            return;
+        }
+
+        pen.lastProduced = Date.now();
+        state.globalCounters.collections++;
+        state.globalCounters.collectionsTotal++;
+        checkQuests('collect', ANIMAL_PRODUCT_EMOJIS[animal.produces], 1);
+        checkQuests('collect_total', 'any', 1);
         showNotification(`${quantity > 1 ? '✨✨ ' : ''}Recogiste ${quantity} ${animal.productName}${quantity > 1 ? ' (Feliz!)' : ''}`);
     } else {
         showNotification(`😢 ${animal.name} está muy triste y no produjo nada...`, true);
@@ -770,6 +1177,9 @@ function waterCrop(plotId) {
             saveGame(); render();
         }
 
+        /**
+         * Desbloquea una parcela o corral descontando el coste correspondiente.
+         */
         function unlockLand(type, id) {
             const cost = type === 'plot' ? PLOT_COSTS[id] : PEN_COSTS[id];
             if (state.money < cost) { showNotification('Falta dinero', true); return; }
@@ -786,30 +1196,19 @@ function waterCrop(plotId) {
             saveGame(); render();
         }
 
+        /**
+         * Vende toda la cantidad de un ítem del inventario. El precio se calcula desde las definiciones.
+         */
+        // Compat wrapper: vende por itemKey buscando el slot y delegando a sellSlot
         function sellItem(itemKey) {
-            if (!state.inventory[itemKey]) return;
-            const qty = state.inventory[itemKey];
-            
-            let price = 0;
-            Object.values(CROPS).forEach(c => { if(itemKey.includes(c.name)) price = c.sell; });
-            Object.values(ANIMALS).forEach(a => { if(itemKey.includes(a.productName)) price = a.sell; });
-            price = Math.round(price * getUpgradeMultiplier('sale_bonus'));
-            
-            const total = price * qty;
-            state.money += total;
-            delete state.inventory[itemKey];
-            
-            state.globalCounters.sells += qty;
-            state.globalCounters.moneyEarnedToday += total;
-            state.globalCounters.moneyEarnedTotalWeek += total;
-            checkQuests('sell', 'any', qty);
-            checkQuests('money', 'any', total);
-            checkQuests('money_total', 'any', total);
-
-            showNotification(`💵 Vendiste todo por $${total}`);
-            checkAchievements(); saveGame(); render();
+            const idx = findInventorySlot(itemKey);
+            if (idx === -1) return;
+            sellSlot(idx);
         }
         
+        /**
+         * Compra una mejora de casa o un cosmético y aplica sus efectos.
+         */
         function buyUpgrade(id) {
             const item = [...HOUSE_UPGRADES, ...HOUSE_COSMETICS].find(u => u.id === id);
             if (state.upgrades[id]) { showNotification('Ya lo tienes', true); return; }
@@ -822,71 +1221,93 @@ function waterCrop(plotId) {
             saveGame(); render();
         }
 
-        // --- SISTEMA DE GUARDADO ---
+        // --- GUARDADO / CARGA ---
 
-        async function saveGame() {
-    localStorage.setItem('farm-v1', JSON.stringify(state));
+                async function saveGame() {
+            // Persistir primero en localStorage (rápido y local)
+            localStorage.setItem('farm-v1', JSON.stringify(state));
 
+            if (currentUser) {
+                try {
+                    if (state.currentFarmId) {
+                        // Guardar snapshot de la granja seleccionada
+                        await saveFarmSnapshot();
+                    } else {
+                        // Fallback legacy para saves compartidos (si no usamos farms todavía)
+                        await supabaseClient.from('farm_saves').upsert({
+                            id: 'shared_farm',
+                            state_json: {
+                                money: state.money,
+                                medals: state.medals,
+                                plots: state.plots,
+                                pens: state.pens,
+                                inventory: state.inventory,
+                                globalCounters: state.globalCounters,
+                                quests: state.quests,
+                                achievements: state.achievements,
+                                upgrades: state.upgrades
+                            },
+                            updated_at: new Date().toISOString()
+                        });
+                    }
+
+                    // Guardar datos personales del jugador en Supabase
+                    await supabaseClient.from('player_data').upsert({
+                        user_id: currentUser.id,
+                        location: state.playerLocation,
+                        travel_start_time: state.travelData.startTime,
+                        travel_destination: state.travelData.destination
+                    });
+                } catch(e) { logError('saveGame supabase error', e); showNotification('No se pudo guardar en la nube', true); }
+            }
+        }
+
+    async function loadGame() 
     if (currentUser) {
-        // Guardar datos compartidos de la granja
-        await _supabase.from('farm_saves').upsert({
-            id: 'shared_farm', // ID fijo para la granja compartida
-            state_json: {
-                money: state.money,
-                medals: state.medals,
-                plots: state.plots,
-                pens: state.pens,
-                inventory: state.inventory,
-                globalCounters: state.globalCounters,
-                quests: state.quests,
-                achievements: state.achievements,
-                upgrades: state.upgrades
-            },
-            updated_at: new Date().toISOString()
-        });
+        // Cargar datos compartidos de la granja (si seleccionada) o fallback legacy
+        let farmSnapshot = null;
+        if (state.currentFarmId) {
+            try {
+                const { data: farm, error } = await supabaseClient.from('farms').select('*').eq('id', state.currentFarmId).maybeSingle();
+                if (error) throw error;
+                if (farm && farm.state_snapshot) farmSnapshot = farm.state_snapshot;
+            } catch(e) { logError('load farm snapshot failed', e); }
+        } else {
+            const { data: farmData } = await supabaseClient
+                .from('farm_saves')
+                .select('state_json')
+                .eq('id', 'shared_farm')
+                .maybeSingle();
+            if (farmData) farmSnapshot = farmData.state_json;
+        }
 
-        // Guardar datos personales del jugador
-        await _supabase.from('player_data').upsert({
-            user_id: currentUser.id,
-            location: state.playerLocation,
-            travel_start_time: state.travelData.startTime,
-            travel_destination: state.travelData.destination
-        });
-    }
-}
-
-    async function loadGame() {
-    if (currentUser) {
-        // Cargar datos compartidos de la granja
-        const { data: farmData } = await _supabase
-            .from('farm_saves')
-            .select('state_json')
-            .eq('id', 'shared_farm')
-            .maybeSingle();
-        
         // Cargar datos personales del jugador
-        const { data: playerData } = await _supabase
+        const { data: playerData } = await supabaseClient
             .from('player_data')
             .select('*')
             .eq('user_id', currentUser.id)
             .maybeSingle();
         
-        if (farmData) {
-            // Cargar datos compartidos
-            state.money = farmData.state_json.money;
-            state.medals = farmData.state_json.medals;
-            state.plots = farmData.state_json.plots;
-            state.pens = farmData.state_json.pens;
-            state.inventory = farmData.state_json.inventory;
-            state.globalCounters = farmData.state_json.globalCounters;
-            state.quests = farmData.state_json.quests;
-            state.upgrades = farmData.state_json.upgrades;
-            
-            // Reconstruir logros
-            state.achievements = ACHIEVEMENTS.map(template => {
-                const saved = farmData.state_json.achievements.find(a => a.id === template.id);
-                return { ...template, completed: saved?.completed || false };
-            });
+        if (farmSnapshot) {
+            // Cargar datos compartidos desde snapshot
+            state.money = farmSnapshot.money;
+            state.medals = farmSnapshot.medals;
+            state.plots = farmSnapshot.plots;
+            state.pens = farmSnapshot.pens;
+            // Compatibilidad: si inventory viene como objeto (antes), convertir a array de slots
+            const inv = farmSnapshot.inventory;
+            if (inv && !Array.isArray(inv)) {
+                const arr = new Array(INVENTORY_CAP).fill(null);
+                let i = 0;
+                for (const [k, q] of Object.entries(inv)) {
+                    if (i >= INVENTORY_CAP) break;
+                    arr[i++] = { item: k, qty: q };
+                }
+                state.inventory = arr;
+            } else {
+                state.inventory = (inv || []).slice(0, INVENTORY_CAP);
+                while (state.inventory.length < INVENTORY_CAP) state.inventory.push(null);
+            }
         }
         
         if (playerData) {
@@ -906,6 +1327,19 @@ function waterCrop(plotId) {
     const localData = localStorage.getItem('farm-v1');
     if (localData) {
         state = JSON.parse(localData);
+        // Compat: si inventory es un objeto, convertir a array de slots
+        if (state.inventory && !Array.isArray(state.inventory)) {
+            const arr = new Array(INVENTORY_CAP).fill(null);
+            let i = 0;
+            for (const [k, q] of Object.entries(state.inventory)) {
+                if (i >= INVENTORY_CAP) break;
+                arr[i++] = { item: k, qty: q };
+            }
+            state.inventory = arr;
+        } else {
+            state.inventory = (state.inventory || []).slice(0, INVENTORY_CAP);
+            while (state.inventory.length < INVENTORY_CAP) state.inventory.push(null);
+        }
         state.achievements = ACHIEVEMENTS.map(template => {
             const saved = state.achievements.find(a => a.id === template.id);
             return { ...template, completed: saved?.completed || false };
@@ -913,10 +1347,45 @@ function waterCrop(plotId) {
         generateNewQuests();
         render();
     }
-}
         // --- RENDER ---
         function openModal(t, id) { state.modal = t; state.selectedCell = id; render(); }
         function closeModal() { state.modal = null; render(); }
+
+        /**
+         * Mostrar la pantalla de entrada (splash) y bloquear scroll de fondo.
+         */
+        function showIntro() {
+            const el = document.getElementById('intro');
+            if (!el) return;
+            el.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+
+        /**
+         * Ocultar la pantalla de entrada y restaurar scroll.
+         */
+        function hideIntro() {
+            const el = document.getElementById('intro');
+            if (!el) return;
+            el.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        // Inicializar handlers del splash (teclado y botones)
+        function initSplashHandlers() {
+            const startBtn = document.getElementById('start-game');
+            const skipBtn = document.getElementById('skip-intro');
+            if (startBtn) startBtn.addEventListener('click', function onStartClick(e) { console.log('Intro: start clicked'); hideIntro(); /* se puede iniciar música aquí */ });
+            if (skipBtn) skipBtn.addEventListener('click', function onSkipClick(e) { console.log('Intro: skip clicked'); hideIntro(); });
+            // Permitir Enter para iniciar
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && document.getElementById('intro') && document.getElementById('intro').style.display !== 'none') {
+                    console.log('Intro: Enter pressed');
+                    hideIntro();
+                }
+            });
+        }
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initSplashHandlers); else initSplashHandlers();
 
         function checkTravelStatus() {
     if (!state.travelData.destination) return null;
@@ -985,10 +1454,11 @@ function collectTravelResource(destinationKey, resourceKey) {
     }
     
     const itemKey = `${resource.emoji} ${resource.name}`;
-    state.inventory[itemKey] = (state.inventory[itemKey] || 0) + 1;
-    
+    // Intentar añadir al inventario; si está lleno, no recoger y avisar
+    if (!addToInventory(itemKey, 1)) return;
+
     delete state.travelActivities[activityId];
-    
+
     showNotification(`✨ Recolectaste 1 ${resource.name}`);
     saveGame();
     render();
@@ -1054,15 +1524,14 @@ function feedAnimal(penId) {
     const consumedCrop = Object.values(CROPS).find(c => c.name === animal.consumes);
     const consumedKey = consumedCrop ? `${consumedCrop.emoji} ${consumedCrop.name}` : null;
     
-    if (consumedKey && (state.inventory[consumedKey] || 0) < animal.consumptionAmount) {
+    if (consumedKey && getInventoryQty(consumedKey) < animal.consumptionAmount) {
         showNotification(`❌ Falta ${animal.consumptionAmount} ${animal.consumes} para alimentar.`, true);
         return;
     }
     
     // Consumir comida
     if (consumedKey) {
-        state.inventory[consumedKey] -= animal.consumptionAmount;
-        if (state.inventory[consumedKey] <= 0) delete state.inventory[consumedKey];
+        removeFromInventory(consumedKey, animal.consumptionAmount);
     }
     
     // Aumentar felicidad
@@ -1098,25 +1567,33 @@ function petAnimal(penId) {
     render();
 }
 function render() {
-    updateEnergy();
-    updateAnimalHappiness();
-    
-    const travelStatus = checkTravelStatus();
-    
-    // Si estás viajando, mostrar pantalla de viaje
-    if (travelStatus === 'traveling') {
-        renderTravelingScreen();
-        return;
+    try {
+        updateEnergy();
+        updateAnimalHappiness();
+        
+        const travelStatus = checkTravelStatus();
+        
+        // Si estás viajando, mostrar pantalla de viaje
+        if (travelStatus === 'traveling') {
+            renderTravelingScreen();
+            return;
+        }
+        
+        // Si llegaste a un destino, mostrar pantalla del destino
+        if (travelStatus === 'arrived') {
+            renderDestinationScreen();
+            return;
+        }
+        
+        // Si estás en la granja, mostrar pantalla normal
+        renderFarmScreen();
+    } catch (err) {
+        console.error('Render failed:', err);
+        showNotification('Se produjo un error en la interfaz: ' + (err.message || err), true);
+        // Mostrar fallback sencillo para evitar pantalla en blanco
+        const app = document.getElementById('app');
+        if (app) app.innerHTML = `<div style="padding:20px; color:#c53030;">Error en la interfaz: ${err.message || err}. Revisa la consola para más detalles.</div>`;
     }
-    
-    // Si llegaste a un destino, mostrar pantalla del destino
-    if (travelStatus === 'arrived') {
-        renderDestinationScreen();
-        return;
-    }
-    
-    // Si estás en la granja, mostrar pantalla normal
-    renderFarmScreen();
 }
 
 function renderTravelingScreen() {
@@ -1156,11 +1633,11 @@ function renderDestinationScreen() {
         <div style="position:fixed; top:0; width:100%; height:60px; background:${destInfo.color}; color:white; display:flex; align-items:center; padding:0 20px; justify-content:space-between; z-index:100; box-shadow:0 2px 5px rgba(0,0,0,0.2);">
             <div>
                 <div style="font-weight:bold; font-size:1.1rem;">${destInfo.icon} ${state.travelData.destination}</div>
-                <div style="font-size:0.8rem;">💰$${state.money} 🏅${state.medals} ⚡${state.energy}/100</div>
+                <div style="font-size:0.92rem; font-weight:700;">💰$${state.money} 🏅${state.medals} ⚡${state.energy}/100</div>
             </div>
             <div style="display:flex; gap:10px;">
-                <button onclick="openModal('inventory')">📦</button>
-                <button onclick="state.travelData = {destination: null, startTime: null}; saveGame(); render();" style="background:#48bb78; padding:8px 16px; border-radius:6px; border:none; color:white; font-weight:bold; cursor:pointer;">
+                <button type="button" class="icon-button" onclick="openModal('inventory')" data-tooltip="Inventario">📦</button>
+                <button type="button" class="btn" onclick="state.travelData = {destination: null, startTime: null}; saveGame(); render();" style="background:#48bb78; padding:8px 16px; border-radius:6px; border:none; color:white; font-weight:bold; cursor:pointer;">
                     🏠 Volver a Granja
                 </button>
             </div>
@@ -1212,14 +1689,15 @@ function renderDestinationScreen() {
         html += `
             <div class="modal" onclick="closeModal()">
                 <div class="modal-content" onclick="event.stopPropagation()">
-                    <button class="modal-close" onclick="closeModal()">✖</button>
+                    <button type="button" class="modal-close" onclick="closeModal()">✖</button>
                     <h3 class="modal-title">📦 Inventario</h3>
-                    ${Object.entries(state.inventory).map(([k,q]) => `
-                        <div class="shop-item" onclick="sellItem('${k}')">
-                            <div style="flex:1;"><b>${k}</b> x${q}</div>
-                            <div style="color:green; font-weight:bold;">Vender Todo</div>
-                        </div>
-                    `).join('') || '<div style="text-align:center; padding:20px;">Vacío</div>'}
+                    <div class="inventory-grid">
+                        ${state.inventory.map((slot, i) => `
+                            <div class="inventory-slot ${!slot ? 'empty' : ''}" onclick="${slot ? `sellSlot(${i})` : ''}">
+                                ${slot ? `<div style="font-weight:700;">${slot.item}</div><div class="qty">x${slot.qty}</div><div style="margin-top:8px; color:green; font-weight:bold;">Vender</div>` : '<div>Vacío</div>'}
+                            </div>
+                        `).join('')}
+                    </div>
                 </div>
             </div>
         `;
@@ -1235,15 +1713,19 @@ function renderFarmScreen() {
         <div style="position:fixed; top:0; width:100%; height:60px; background:#2f855a; color:white; display:flex; align-items:center; padding:0 20px; justify-content:space-between; z-index:100; box-shadow:0 2px 5px rgba(0,0,0,0.2);">
             <div>
                 <div style="font-weight:bold; font-size:1.1rem;">🌾 Granja V1.0</div>
-                <div style="font-size:0.8rem;">💰$${state.money} 🏅${state.medals} 🔥${state.quests.streak} ⚡${state.energy}/100</div>
+                <div style="font-size:0.92rem; font-weight:700;">💰$${state.money} 🏅${state.medals} 🔥${state.quests.streak} ⚡${state.energy}/100</div>
             </div>
-            <div style="display:flex; gap:10px;">
-                <button onclick="openModal('quests')">📜</button>
-                <button onclick="openModal('shop')">🏪</button>
-                <button onclick="openModal('inventory')">📦</button>
-                <button onclick="openModal('house')">🏠</button>
-                <button onclick="openModal('upgrades')">🏠</button>
-                <button onclick="openModal('map')">🗺️</button>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <button type="button" class="btn" onclick="openFarmSelector()" style="background:rgba(255,255,255,0.06); color:white; padding:6px 10px; border-radius:6px;">
+                    ${state.currentFarmName ? `Granja: ${state.currentFarmName} ${state.currentFarmLastActivity && (Date.now() - new Date(state.currentFarmLastActivity) < 120000) ? '🟢' : ''}` : 'Mi Granja (seleccionar)'}
+                </button>
+                <div style="width:8px"></div>
+                <button type="button" class="icon-button" onclick="openModal('quests')" data-tooltip="Misiones">📜</button>
+                <button type="button" class="icon-button" onclick="openModal('shop')" data-tooltip="Tienda">🏪</button>
+                <button type="button" class="icon-button" onclick="openModal('inventory')" data-tooltip="Inventario">📦</button>
+                <button type="button" class="icon-button" onclick="openModal('house')" data-tooltip="Casa">🏠</button>
+                <button type="button" class="icon-button" onclick="openModal('upgrades')" data-tooltip="Mejoras">🏠</button>
+                <button type="button" class="icon-button" onclick="openModal('map')" data-tooltip="Mapa">🗺️</button>
             </div>
         </div>
         <div style="margin-top:70px; padding:20px; padding-bottom:100px; display:flex; flex-direction:column; align-items:center; gap:25px; min-height:calc(100vh - 70px);">
@@ -1426,12 +1908,11 @@ function renderFarmScreen() {
             `).join('');
     }
     else if (state.modal === 'inventory') {
-        content = Object.entries(state.inventory).map(([k,q]) => `
-            <div class="shop-item" onclick="sellItem('${k}')">
-                <div style="flex:1;"><b>${k}</b> x${q}</div>
-                <div style="color:green; font-weight:bold;">Vender Todo</div>
+        content = `<div class="inventory-grid">` + state.inventory.map((slot, i) => `
+            <div class="inventory-slot ${!slot ? 'empty' : ''}" onclick="${slot ? `sellSlot(${i})` : ''}">
+                ${slot ? `<div style="font-weight:700;">${slot.item}</div><div class="qty">x${slot.qty}</div><div style="margin-top:8px; color:green; font-weight:bold;">Vender</div>` : 'Vacío'}
             </div>
-        `).join('') || '<div style="text-align:center; padding:20px;">Vacío</div>';
+        `).join('') + `</div>`;
     }
     else if (state.modal === 'shop') {
         content = `<h3>Expansiones</h3>`;
@@ -1450,6 +1931,33 @@ function renderFarmScreen() {
                         <small style="color:#718096;">${info.description}</small>
                     </div>
                 `).join('')}
+            </div>
+        `;
+    }
+    else if (state.modal === 'farm_selector') {
+        content = `
+            <h3 class="modal-title">🌾 Seleccionar Granja</h3>
+            <div style="margin-bottom:10px;">
+                <b>Tus granjas</b>
+                <div style="margin-top:8px; display:flex; flex-direction:column; gap:8px; max-height:220px; overflow:auto;">
+                    ${state.farmsList && state.farmsList.length ? state.farmsList.map(f => `
+                        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                            <div style="flex:1;">
+                                <b>${f.name}</b> ${f.role === 'owner' ? '<small style="opacity:.8"> (Owner)</small>' : ''}
+                                <div style="font-size:0.85rem; color:#718096;">Código: ${f.invite_code || '—'} · Últ. actividad: ${f.last_activity_at ? new Date(f.last_activity_at).toLocaleString() : '—'}</div>
+                            </div>
+                            <div>
+                                <button type="button" class="btn" onclick="switchToFarmById('${f.id}')">Seleccionar</button>
+                            </div>
+                        </div>
+                    `).join('') : '<div>No perteneces a ninguna granja aún</div>'}
+                </div>
+            </div>
+            <hr>
+            <div style="margin-top:10px; display:flex; gap:8px; flex-direction:column;">
+                <button type="button" class="btn" onclick="(async()=>{ const name = prompt('Nombre de la granja:'); if (name) { const farm=await createFarm(name); await listUserFarms(); if (farm) { switchToFarm(farm); state.modal=null; render(); } } })()">Crear Granja</button>
+                <button type="button" class="btn secondary" onclick="(async()=>{ const code = prompt('Código de invitación:'); if (code) { const farm = await joinFarmByCode(code); if (farm) { await listUserFarms(); switchToFarm(farm); state.modal=null; render(); } } })()">Unirse con Código</button>
+                <button type="button" class="btn" onclick="state.modal=null; render();">Cerrar</button>
             </div>
         `;
     }
@@ -1510,7 +2018,7 @@ function renderFarmScreen() {
                     <b>Sincronización Nube</b><br>
                     <small>${currentUser ? currentUser.email : 'Sin conexión'}</small>
                 </div>
-                <button onclick="${currentUser ? '_supabase.auth.signOut()' : 'loginUser()'}">
+                <button type="button" onclick="${currentUser ? 'supabaseClient.auth.signOut()' : 'loginUser()'}">
                     ${currentUser ? 'Salir' : 'Entrar'}
                 </button>
             </div>
@@ -1521,7 +2029,7 @@ function renderFarmScreen() {
         html += `
             <div class="modal" onclick="closeModal()">
                 <div class="modal-content" onclick="event.stopPropagation()">
-                    <button class="modal-close" onclick="closeModal()">✖</button>
+                    <button type="button" class="modal-close" onclick="closeModal()">✖</button>
                     ${content}
                 </div>
             </div>
@@ -1530,21 +2038,50 @@ function renderFarmScreen() {
 
     app.innerHTML = html;
 }
-// Escuchar cambios de sesión
-_supabase.auth.onAuthStateChange((event, session) => {
+// Escuchar cambios de sesión y sincronizar usuario
+supabaseClient.auth.onAuthStateChange((event, session) => {
     if (session) {
         currentUser = session.user;
         showNotification("👋 Sesión iniciada: " + currentUser.email);
-        loadGame(); 
+        // After login, ensure personal farm exists and load user's farms, then load game
+        (async () => {
+            try {
+                await ensurePersonalFarm();
+                await listUserFarms();
+                // If user has a previously selected farm in localStorage, restore it
+                const saved = localStorage.getItem('selectedFarm');
+                if (saved) {
+                    try { const obj = JSON.parse(saved); if (obj && obj.id) switchToFarmById(obj.id); }
+                    catch(e) { console.warn('restoring selectedFarm failed', e); }
+                } else {
+                    // Default to the first listed farm (personal)
+                    if (state.farmsList && state.farmsList.length) switchToFarm(state.farmsList[0]);
+                }
+
+                await loadGame();
+            } catch(e) { console.warn('post-login farm setup failed', e); }
+        })();
     } else {
         currentUser = null;
     }
     render();
 });
+// Manejo global de errores para ayudar a depurar en vivo
+window.addEventListener('error', (e) => {
+    console.error('Uncaught error:', e.error || e.message || e);
+    showNotification('Error inesperado: ' + (e.error?.message || e.message || e), true);
+});
+window.addEventListener('unhandledrejection', (e) => {
+    console.error('Unhandled promise rejection:', e.reason || e);
+    showNotification('Error de promesa no controlado: ' + (e.reason?.message || e.reason || e), true);
+});
+
 // Inicializar el juego
 generateNewQuests(); // <-- ESTO FALTABA
-loadGame();
+loadGame().catch(e => console.warn('loadGame failed', e));
 render();
+// Mostrar la pantalla de entrada al cargar
+if (document.getElementById('intro')) showIntro();
 setInterval(() => { if(!state.modal) render(); }, 1000);
     // 🎮 MODO DIOS (solo para pruebas)
 window.godMode = function() {
@@ -1591,7 +2128,3 @@ window.fastForward = function(hours = 1) {
     </script>
 </body>
 </html>
-
-
-
-
