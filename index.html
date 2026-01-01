@@ -1055,6 +1055,28 @@
                     setTimeout(() => { if(area.contains(toast)) area.removeChild(toast); }, 300);
                 }, duration);
             }
+
+    // Detectar y manejar el magic link cuando la página carga
+    (async function initAuth() {
+        try {
+            const { data, error } = await supabaseClient.auth.getSession();
+            if (error) throw error;
+            
+            if (data.session) {
+                currentUser = data.session.user;
+                showNotification("✅ ¡Sesión iniciada correctamente!");
+                
+                // Limpiar la URL de los parámetros de autenticación
+                if (window.location.hash.includes('access_token')) {
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }
+            }
+        } catch (err) {
+            console.error('Error al iniciar sesión:', err);
+            showNotification('Error al verificar la sesión', true);
+        }
+    })();
+
             function checkAchievements() { 
         state.achievements.forEach(ach => {
             if (ach.completed) return;
