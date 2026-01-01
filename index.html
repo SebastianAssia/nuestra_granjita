@@ -716,14 +716,36 @@
     async function loginUser() {
         const email = prompt("Introduce tu email para recibir un enlace de acceso:");
         if (!email) return;
-        const { error } = await supabaseClient.auth.signInWithOtp({ 
-            email,
-            options: {
-                emailRedirectTo: 'https://sebastianassia.github.io/nuestra_granjita/'
+        try {
+            // Intentamos enviar magic link con redirect explícito
+            const res = await supabaseClient.auth.signInWithOtp({ 
+                email,
+                options: {
+                    emailRedirectTo: 'https://sebastianassia.github.io/nuestra_granjita/'
+                }
+            });
+            console.log('signInWithOtp response', res);
+            if (res.error) {
+                // Si hay error relacionado con redirect, intentar sin redirect como fallback
+                showNotification('Error al enviar el enlace: ' + res.error.message, true);
+                if (/redirect|url|callback/i.test(res.error.message || '')) {
+                    try {
+                        const fallback = await supabaseClient.auth.signInWithOtp({ email });
+                        console.log('signInWithOtp fallback response', fallback);
+                        if (fallback.error) showNotification('Fallback fallo: ' + fallback.error.message, true);
+                        else showNotification('📧 ¡Revisa tu correo para entrar! (fallback)');
+                    } catch (e) {
+                        console.error('Fallback signInWithOtp failed', e);
+                        showNotification('Error al enviar el enlace (fallback)', true);
+                    }
+                }
+            } else {
+                showNotification('📧 ¡Revisa tu correo para entrar!');
             }
-        });
-        if (error) showNotification("Error: " + error.message, true);
-        else showNotification("📧 ¡Revisa tu correo para entrar!");
+        } catch (e) {
+            console.error('signInWithOtp threw', e);
+            showNotification('Error al solicitar el enlace de inicio de sesión', true);
+        }
     }
             const HOUR_IN_MS = 60 * 60 * 1000;
             const DAY_IN_MS = 24 * HOUR_IN_MS;
