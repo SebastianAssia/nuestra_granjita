@@ -370,6 +370,13 @@ body::before {
     <div id="notification-area"></div>
 
     <!-- Intro Splash: pantalla de entrada animada -->
+    <!-- Fallback global para showIntro/hideIntro si el script principal aún no está ejecutado -->
+    <script>
+        (function(){
+            if (!window.showIntro) window.showIntro = function(){ try { const el = document.getElementById('intro'); if(el) el.style.display='flex'; console.warn('Fallback showIntro called'); } catch(e) { console.warn('fallback showIntro failed', e); } };
+            if (!window.hideIntro) window.hideIntro = function(){ try { const el = document.getElementById('intro'); if(el) el.style.display='none'; console.warn('Fallback hideIntro called'); } catch(e) { console.warn('fallback hideIntro failed', e); } };
+        })();
+    </script>
     <div id="intro" class="intro" role="dialog" aria-modal="true" aria-labelledby="intro-title" style="display:flex;">
         <div class="intro-content">
             <div class="intro-emoji" aria-hidden="true">
@@ -380,8 +387,8 @@ body::before {
             <div id="intro-title" class="farm-title">Nuestra <span class="accent">Granjita</span></div>
             <div class="intro-sub">Un lugar pequeño, grandes aventuras</div>
             <div style="margin-top:18px; display:flex; gap:10px; justify-content:center;">
-                <button id="start-game" type="button" class="start-button btn">Iniciar</button>
-                <button id="skip-intro" type="button" class="start-button btn secondary" style="background:#718096;">Saltar</button>
+                <button id="start-game" type="button" class="start-button btn" onclick="(function(){ console.log('Intro: start onclick inline'); hideIntro(); })()">Iniciar</button>
+                <button id="skip-intro" type="button" class="start-button btn secondary" style="background:#718096;" onclick="(function(){ console.log('Intro: skip onclick inline'); hideIntro(); })()">Saltar</button>
             </div>
         </div>
     </div>
@@ -399,11 +406,6 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // Usuario actual (null si no hay sesión)
 let currentUser = null;
 
-// --- SISTEMA DE GRANJAS (Compartidas y personales) ---
-// Estado adicional en memoria
-state.currentFarmId = null;           // id de la granja seleccionada
-state.currentFarmName = null;
-state.farmsList = [];                // lista de granjas a las que pertenece el usuario
 
 // Helper: genera código de invitación corto
 function generateInviteCode(len = 6) {
@@ -682,6 +684,9 @@ let state = {
     energy: 100,
     lastEnergyUpdate: Date.now(),
     travelActivities: {},
+    currentFarmId: null,
+    currentFarmName: null,
+    farmsList: [],
     plots: [ { id: 0, unlocked: true, crop: null, plantedAt: null, isWatered: false, lastWatered: null } ],
             pens: [ { id: 0, unlocked: true, animal: null, lastProduced: null, happiness: 100, lastFed: null, lastPetted: null } ],
             inventory: new Array(INVENTORY_CAP).fill(null),
@@ -1262,7 +1267,8 @@ function startTravel(destination) {
             }
         }
 
-    async function loadGame() 
+    async function loadGame() {
+    console.log('loadGame start', { currentUser: currentUser ? currentUser.email : null, selectedFarm: state.currentFarmId });
     if (currentUser) {
         // Cargar datos compartidos de la granja (si seleccionada) o fallback legacy
         let farmSnapshot = null;
@@ -1289,6 +1295,7 @@ function startTravel(destination) {
             .maybeSingle();
         
         if (farmSnapshot) {
+            console.log('Applying farm snapshot', { money: farmSnapshot.money, plots: farmSnapshot.plots?.length || 0 });
             // Cargar datos compartidos desde snapshot
             state.money = farmSnapshot.money;
             state.medals = farmSnapshot.medals;
@@ -1347,6 +1354,7 @@ function startTravel(destination) {
         generateNewQuests();
         render();
     }
+}
         // --- RENDER ---
         function openModal(t, id) { state.modal = t; state.selectedCell = id; render(); }
         function closeModal() { state.modal = null; render(); }
@@ -1355,6 +1363,7 @@ function startTravel(destination) {
          * Mostrar la pantalla de entrada (splash) y bloquear scroll de fondo.
          */
         function showIntro() {
+            console.log('showIntro called');
             const el = document.getElementById('intro');
             if (!el) return;
             el.style.display = 'flex';
@@ -1365,14 +1374,20 @@ function startTravel(destination) {
          * Ocultar la pantalla de entrada y restaurar scroll.
          */
         function hideIntro() {
+            console.log('hideIntro called');
             const el = document.getElementById('intro');
             if (!el) return;
             el.style.display = 'none';
             document.body.style.overflow = 'auto';
+            // Si existió un fallback global, reemplazarlo con la función real para futuras llamadas
+            try { if (window && window.hideIntro && window.hideIntro.toString && window.hideIntro.toString().includes('Fallback hideIntro')) { window.hideIntro = hideIntro; } } catch(e) { /* noop */ }
+            // Re-render after hiding intro to ensure UI updates
+            try { render(); } catch(e) { logError('render after hideIntro failed', e); }
         }
 
         // Inicializar handlers del splash (teclado y botones)
         function initSplashHandlers() {
+            console.log('initSplashHandlers executed');
             const startBtn = document.getElementById('start-game');
             const skipBtn = document.getElementById('skip-intro');
             if (startBtn) startBtn.addEventListener('click', function onStartClick(e) { console.log('Intro: start clicked'); hideIntro(); /* se puede iniciar música aquí */ });
@@ -1567,26 +1582,31 @@ function petAnimal(penId) {
     render();
 }
 function render() {
+    console.log('render start', { modal: state.modal, currentFarmId: state.currentFarmId, currentFarmName: state.currentFarmName });
     try {
         updateEnergy();
         updateAnimalHappiness();
         
         const travelStatus = checkTravelStatus();
+        console.log('render travelStatus', travelStatus);
         
         // Si estás viajando, mostrar pantalla de viaje
         if (travelStatus === 'traveling') {
             renderTravelingScreen();
+            console.log('render end (traveling)');
             return;
         }
         
         // Si llegaste a un destino, mostrar pantalla del destino
         if (travelStatus === 'arrived') {
             renderDestinationScreen();
+            console.log('render end (arrived)');
             return;
         }
         
         // Si estás en la granja, mostrar pantalla normal
         renderFarmScreen();
+        console.log('render end (farm)');
     } catch (err) {
         console.error('Render failed:', err);
         showNotification('Se produjo un error en la interfaz: ' + (err.message || err), true);
@@ -1707,7 +1727,9 @@ function renderDestinationScreen() {
 }
 
 function renderFarmScreen() {
-    const app = document.getElementById('app');
+    console.log('renderFarmScreen start', { plots: state.plots?.length, pens: state.pens?.length, inventory: state.inventory?.length });
+    try {
+        const app = document.getElementById('app');
     
     let html = `
         <div style="position:fixed; top:0; width:100%; height:60px; background:#2f855a; color:white; display:flex; align-items:center; padding:0 20px; justify-content:space-between; z-index:100; box-shadow:0 2px 5px rgba(0,0,0,0.2);">
@@ -2037,6 +2059,11 @@ function renderFarmScreen() {
     }
 
     app.innerHTML = html;
+    } catch(e) {
+        console.error('renderFarmScreen failed', e);
+        if (typeof logError === 'function') logError('renderFarmScreen', e);
+        app.innerHTML = `<div style="padding:20px;"><h2>Error al renderizar la granja</h2><pre style="white-space:pre-wrap;">${e.message}</pre><button type="button" onclick="render()">Reintentar</button></div>`;
+    }
 }
 // Escuchar cambios de sesión y sincronizar usuario
 supabaseClient.auth.onAuthStateChange((event, session) => {
